@@ -16,6 +16,7 @@ import LikedVideosPage from './pages/LikedVideosPage';
 import WatchLaterPage from './pages/WatchLaterPage';
 import SearchPage from './pages/SearchPage';
 import ExplorePage from './pages/ExplorePage';
+import ChannelPage from './pages/ChannelPage';
 
 function AppContent() {
   const { isVoiceModalOpen, setIsVoiceModalOpen } = useApp();
@@ -47,6 +48,7 @@ function AppContent() {
             <Route path="/watch-later" element={<WatchLaterPage />} />
             <Route path="/search" element={<SearchPage />} />
             <Route path="/explore" element={<ExplorePage />} />
+            <Route path="/channel/:channelId" element={<ChannelPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

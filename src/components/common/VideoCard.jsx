@@ -7,12 +7,10 @@ import {
   Download,
   Ban,
   CheckCircle2,
-  Play,
-  Sparkles
+  Play
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
-import { formatViews } from '../../utils/formatters';
 import ShareModal from './ShareModal';
 import DownloadModal from './DownloadModal';
 
@@ -38,6 +36,11 @@ export default function VideoCard({ video }) {
     navigate(`/watch?v=${video.id}`);
   };
 
+  const handleChannelClick = (e) => {
+    e.stopPropagation();
+    navigate(`/channel/${encodeURIComponent(video.channelId || video.channel)}?name=${encodeURIComponent(video.channel)}`);
+  };
+
   const isLive = video.duration === 'LIVE' || video.views?.toString().includes('watching');
 
   return (
@@ -51,6 +54,7 @@ export default function VideoCard({ video }) {
           src={video.thumbnail}
           alt={video.title}
           loading="lazy"
+          referrerPolicy="no-referrer"
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
           onError={(e) => {
             e.target.src = `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`;
@@ -59,7 +63,6 @@ export default function VideoCard({ video }) {
 
         {/* Ambient Cinema Light Glow Overlay on Hover */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-          {/* Animated Glowing Play Badge */}
           <div className="w-12 h-12 rounded-full bg-red-600 text-white flex items-center justify-center shadow-lg shadow-red-600/50 transform scale-75 group-hover:scale-100 transition-all duration-300 ease-out ring-4 ring-white/20">
             <Play className="w-5 h-5 ml-0.5 fill-white" />
           </div>
@@ -82,18 +85,17 @@ export default function VideoCard({ video }) {
 
       {/* Video Info Meta Row */}
       <div className="flex gap-3 mt-3 px-1 items-start">
-        {/* Channel Avatar with Glow Ring */}
+        {/* Channel Avatar with Direct Channel Page Navigation */}
         <div
-          onClick={(e) => {
-            e.stopPropagation();
-            navigate(`/search?q=${encodeURIComponent(video.channel)}`);
-          }}
+          onClick={handleChannelClick}
           className="shrink-0 pt-0.5"
+          title={`View ${video.channel} Channel`}
         >
           <div className="relative group/avatar">
             <img
               src={video.channelAvatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(video.channel)}`}
               alt={video.channel}
+              referrerPolicy="no-referrer"
               className="w-9 h-9 rounded-full object-cover ring-1 ring-neutral-700/80 group-hover:ring-2 group-hover:ring-red-500 transition-all duration-300 shadow"
             />
           </div>
@@ -110,11 +112,8 @@ export default function VideoCard({ video }) {
 
           <div className="mt-1 text-xs text-neutral-400 flex flex-col sm:flex-row sm:items-center sm:gap-1.5 flex-wrap">
             <span
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/search?q=${encodeURIComponent(video.channel)}`);
-              }}
-              className="hover:text-neutral-100 transition font-medium flex items-center gap-1"
+              onClick={handleChannelClick}
+              className="hover:text-neutral-100 transition font-medium flex items-center gap-1 cursor-pointer"
             >
               {video.channel}
               <CheckCircle2 className="w-3.5 h-3.5 text-neutral-400 fill-neutral-400 text-[#0f0f0f]" />

@@ -206,7 +206,7 @@ async function postYouTubeAPI(endpoint, payload) {
         'Content-Type': 'application/json',
         'User-Agent': 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Mobile Safari/537.36',
         'Origin': 'https://www.youtube.com',
-        'Referer': 'https://www.youtube.com'
+        'Referer': ''
       },
       data: payload
     });
@@ -231,6 +231,15 @@ async function postYouTubeAPI(endpoint, payload) {
 }
 
 /**
+ * Clean URL helper ensuring https:
+ */
+export function cleanMediaUrl(url) {
+  if (!url) return '';
+  if (url.startsWith('//')) return 'https:' + url;
+  return url;
+}
+
+/**
  * Parse a raw videoRenderer from InnerTube into PlayTube Video Object
  */
 function parseVideoRenderer(v) {
@@ -245,12 +254,10 @@ function parseVideoRenderer(v) {
     v.descriptionSnippet?.runs?.map(r => r.text).join('') ||
     `Watch ${title} by ${channelName} ad-free on PlayTube.`;
 
-  let avatarUrl = v.channelThumbnailSupportedRenderers?.channelThumbnailWithLinkRenderer?.thumbnail?.thumbnails?.[0]?.url;
-  if (avatarUrl && avatarUrl.startsWith('//')) avatarUrl = 'https:' + avatarUrl;
+  let avatarUrl = cleanMediaUrl(v.channelThumbnailSupportedRenderers?.channelThumbnailWithLinkRenderer?.thumbnail?.thumbnails?.[0]?.url);
   if (!avatarUrl) avatarUrl = `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(channelName)}`;
 
-  let bestThumbnail = v.thumbnail?.thumbnails?.[v.thumbnail.thumbnails.length - 1]?.url;
-  if (bestThumbnail && bestThumbnail.startsWith('//')) bestThumbnail = 'https:' + bestThumbnail;
+  let bestThumbnail = cleanMediaUrl(v.thumbnail?.thumbnails?.[v.thumbnail.thumbnails.length - 1]?.url);
   if (!bestThumbnail) bestThumbnail = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
 
   return {
@@ -322,8 +329,7 @@ export async function searchVideos(query) {
         // 1. Channel Renderer (small & large creators)
         if (item.channelRenderer) {
           const cr = item.channelRenderer;
-          let avatar = cr.thumbnail?.thumbnails?.[0]?.url;
-          if (avatar && avatar.startsWith('//')) avatar = 'https:' + avatar;
+          let avatar = cleanMediaUrl(cr.thumbnail?.thumbnails?.[0]?.url);
           if (!avatar) avatar = `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(cr.title?.simpleText || 'creator')}`;
 
           const title = cr.title?.simpleText || 'Creator';
@@ -363,7 +369,6 @@ export async function searchVideos(query) {
     }
 
     if (extractedChannels.length > 0 || extractedVideos.length > 0) {
-      // Create unified array with attached metadata properties
       const unified = [...extractedChannels, ...extractedVideos];
       unified.channels = extractedChannels;
       unified.videos = extractedVideos;
@@ -373,7 +378,6 @@ export async function searchVideos(query) {
     console.warn('Real YouTube search fallback active:', err);
   }
 
-  // Fallback to local filtering if completely offline
   const lowerQ = trimmed.toLowerCase();
   const matched = CURATED_VIDEOS.filter(v =>
     v.title.toLowerCase().includes(lowerQ) ||
@@ -385,6 +389,47 @@ export async function searchVideos(query) {
   fallbackResult.channels = [];
   fallbackResult.videos = fallbackResult;
   return fallbackResult;
+}
+
+/**
+ * Fetch Channel Profile & Videos by Channel ID or Creator Name
+ */
+export async function getChannelProfile(channelId, channelName) {
+  const query = channelName || channelId;
+  try {
+    const results = await searchVideos(query);
+    const channel = results.channels?.find(c => c.id === channelId || c.title.toLowerCase() === channelName?.toLowerCase()) ||
+                    results.channels?.[0] || {
+                      id: channelId || 'UC_unknown',
+                      title: channelName || 'YouTube Creator',
+                      handle: channelName ? `@${channelName.replace(/\s+/g, '').toLowerCase()}` : '@creator',
+                      subscribers: 'Official Creator',
+                      videoCount: `${results.videos?.length || 12} videos`,
+                      avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(channelName || channelId)}`,
+                      description: 'Welcome to the official creator channel on PlayTube. Stream ad-free high fidelity videos.'
+                    };
+
+    const videos = results.videos || results.filter(v => !v.isChannel);
+
+    return {
+      channel,
+      videos
+    };
+  } catch (e) {
+    console.error('getChannelProfile error:', e);
+    return {
+      channel: {
+        id: channelId || 'UC_creator',
+        title: channelName || 'YouTube Creator',
+        handle: '@creator',
+        subscribers: '1.2K subscribers',
+        videoCount: '15 videos',
+        avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(channelName || 'creator')}`,
+        description: 'Official YouTube channel profile.'
+      },
+      videos: CURATED_VIDEOS
+    };
+  }
 }
 
 /**
