@@ -9,11 +9,11 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![Capacitor](https://img.shields.io/badge/Capacitor-Android-119EFF?logo=capacitor&logoColor=white)](https://capacitorjs.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![APK Download](https://img.shields.io/badge/Download-Android%20APK%20(4.4MB)-red?logo=android&logoColor=white)](https://github.com/palnirupam/NextTube/raw/master/PlayTube.apk)
+[![APK Download](https://img.shields.io/badge/Download-Android%20APK%20(4.4MB)-red?logo=android&logoColor=white)](https://github.com/palnirupam/NextTube/raw/main/PlayTube.apk)
 
 <br/>
 
-<a href="https://github.com/palnirupam/NextTube/raw/master/PlayTube.apk">
+<a href="https://github.com/palnirupam/NextTube/raw/main/PlayTube.apk">
   <img src="https://img.shields.io/badge/📥_DOWNLOAD_LATEST_APK-PlayTube.apk_(4.4MB)-E50914?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" />
 </a>
 
@@ -29,7 +29,7 @@
 
 You can download and install the ready-to-use Android APK directly:
 
-👉 **[Download PlayTube.apk (4.41 MB)](https://github.com/palnirupam/NextTube/raw/master/PlayTube.apk)**
+👉 **[Download PlayTube.apk (4.41 MB)](https://github.com/palnirupam/NextTube/raw/main/PlayTube.apk)**
 
 > **Installation Tip:** Transfer the `.apk` to your Android device, tap to install, and allow *Unknown Sources* if prompted.
 
