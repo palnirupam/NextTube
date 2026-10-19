@@ -1,25 +1,64 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { ChevronUp, ChevronDown, Compass } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { ChevronUp, ChevronDown, Compass, Loader2 } from 'lucide-react';
 import { getShortsFeed } from '../services/api';
 import ShortCard from '../components/shorts/ShortCard';
 
 export default function ShortsPage() {
   const [shorts, setShorts] = useState([]);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [page, setPage] = useState(1);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const isLoadingRef = useRef(false);
   const containerRef = useRef(null);
 
-  // Fetch live YouTube Shorts on mount
+  // Fetch initial batch of live YouTube Shorts on mount
   useEffect(() => {
     let active = true;
-    getShortsFeed().then((items) => {
+    isLoadingRef.current = true;
+    getShortsFeed(1).then((items) => {
       if (active && items && items.length > 0) {
         setShorts(items);
       }
+      isLoadingRef.current = false;
+    }).catch(() => {
+      isLoadingRef.current = false;
     });
     return () => {
       active = false;
     };
   }, []);
+
+  // Endless pagination: pre-fetch next batch of shorts seamlessly
+  const loadMore = useCallback(async () => {
+    if (isLoadingRef.current) return;
+    isLoadingRef.current = true;
+    setLoadingMore(true);
+
+    const nextPage = page + 1;
+    try {
+      const moreItems = await getShortsFeed(nextPage);
+      if (moreItems && moreItems.length > 0) {
+        setShorts((prev) => {
+          const existingIds = new Set(prev.map(s => s.id));
+          const uniqueNew = moreItems.filter(s => !existingIds.has(s.id));
+          return [...prev, ...uniqueNew];
+        });
+        setPage(nextPage);
+      }
+    } catch (e) {
+      console.warn('Endless shorts loading notice:', e);
+    } finally {
+      isLoadingRef.current = false;
+      setLoadingMore(false);
+    }
+  }, [page]);
+
+  // When user approaches within 4 shorts from the bottom, prefetch next batch
+  useEffect(() => {
+    if (shorts.length > 0 && activeIndex >= shorts.length - 4 && !isLoadingRef.current) {
+      loadMore();
+    }
+  }, [activeIndex, shorts.length, loadMore]);
 
   // Scroll to specific index smoothly
   const scrollToIndex = (index) => {
@@ -96,13 +135,14 @@ export default function ShortsPage() {
           <ChevronUp className="w-5 h-5" />
         </button>
 
-        <div className="text-center font-mono text-[10px] text-neutral-400 font-bold bg-black/60 px-2 py-1 rounded-full border border-neutral-800">
-          {activeIndex + 1} / {shorts.length}
+        <div className="text-center font-mono text-[10px] text-neutral-400 font-bold bg-black/60 px-2.5 py-1 rounded-full border border-neutral-800 flex items-center justify-center gap-1">
+          {loadingMore && <Loader2 className="w-3 h-3 animate-spin text-red-500" />}
+          <span>{activeIndex + 1} / {shorts.length}</span>
         </div>
 
         <button
           onClick={handleNext}
-          disabled={activeIndex === shorts.length - 1}
+          disabled={activeIndex >= shorts.length - 1 && loadingMore}
           className="p-3.5 rounded-full bg-neutral-850 hover:bg-neutral-750 disabled:opacity-20 text-white transition-all shadow-2xl border border-neutral-700/80 active:scale-90"
           title="Next Short (Down Arrow / Scroll Down)"
         >

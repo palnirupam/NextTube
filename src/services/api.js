@@ -572,15 +572,33 @@ export async function getHomeFeed(category = 'All', page = 1) {
 
 /**
  * Live YouTube Shorts Feed
- * Delivers endless vertical video feed for reels/shorts directly from YouTube
+ * Delivers endless, unlimited vertical video feed for reels/shorts directly from YouTube
  */
-export async function getShortsFeed(query = '#shorts') {
+export async function getShortsFeed(page = 1) {
+  const shortsTopics = [
+    '#shorts',
+    '#shortsvideo viral',
+    '#trending shorts',
+    'viral comedy shorts',
+    '#reels trending',
+    'popular dance music shorts',
+    'funny viral shorts 2026',
+    'trending entertainments shorts',
+    'life hacks viral shorts',
+    'amazing talent shorts viral'
+  ];
+
+  const query = typeof page === 'number'
+    ? shortsTopics[(page - 1) % shortsTopics.length]
+    : (page || '#shorts');
+
   try {
     const res = await searchVideos(query);
     let shorts = res.shorts || [];
 
     if (shorts.length < 10) {
-      const backupRes = await searchVideos('#shortsvideo viral');
+      const backupQuery = shortsTopics[page % shortsTopics.length];
+      const backupRes = await searchVideos(backupQuery);
       if (backupRes.shorts && backupRes.shorts.length > 0) {
         shorts = [...shorts, ...backupRes.shorts];
       }
