@@ -131,10 +131,9 @@ export default function VideoPlayer({
     );
   }
 
-  const isNative = Capacitor.isNativePlatform();
-  // 100% Authentic YouTube Player with controls=1 for official 1080p/4K Quality Switcher, Captions, Speed & Native Fullscreen
-  // vq=hd1080 prompts YouTube adaptive streaming engine to immediately deliver High Definition streams
-  const embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&controls=1&modestbranding=1&rel=0&iv_load_policy=3&playsinline=1&enablejsapi=1&vq=hd1080${isNative ? '' : `&origin=${encodeURIComponent(window.location.origin)}`}`;
+  // Use official youtube.com embed with playsinline, controls=1 and vq=hd1080 for HD streaming
+  // Omit origin query to prevent YouTube origin mismatch errors on Vercel & mobile webviews
+  const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&controls=1&rel=0&playsinline=1&enablejsapi=1&vq=hd1080`;
 
   return (
     <div

@@ -787,12 +787,17 @@ export function getSearchSuggestions(query) {
   });
 }
 
+const relatedVideosCache = new Map();
+
 /**
  * 100% Real YouTube Related Videos from InnerTube /next
  * Returns official YouTube recommendations with authentic avatars and views
  */
 export async function getRelatedVideos(videoId, fallbackQuery = '') {
   if (!videoId) return [];
+  if (relatedVideosCache.has(videoId)) {
+    return relatedVideosCache.get(videoId);
+  }
 
   try {
     const payload = {
@@ -845,6 +850,7 @@ export async function getRelatedVideos(videoId, fallbackQuery = '') {
     }
 
     if (related.length > 0) {
+      relatedVideosCache.set(videoId, related);
       return related;
     }
   } catch (err) {
@@ -866,6 +872,8 @@ export async function getRelatedVideos(videoId, fallbackQuery = '') {
   return [];
 }
 
+const videoCommentsCache = new Map();
+
 /**
  * 100% Real YouTube Comments from InnerTube
  * Reverse-Engineered continuation token + entityBatchUpdate mutations
@@ -873,6 +881,9 @@ export async function getRelatedVideos(videoId, fallbackQuery = '') {
  */
 export async function getVideoComments(videoId) {
   if (!videoId) return { totalCount: 'Comments', comments: [] };
+  if (videoCommentsCache.has(videoId)) {
+    return videoCommentsCache.get(videoId);
+  }
 
   try {
     const payload = {
@@ -972,10 +983,12 @@ export async function getVideoComments(videoId) {
       }
     }
 
-    return {
+    const result = {
       totalCount,
       comments
     };
+    videoCommentsCache.set(videoId, result);
+    return result;
   } catch (err) {
     console.warn('Real YouTube comments fetch error:', err);
     return { totalCount: 'Comments', comments: [] };

@@ -9,9 +9,10 @@ import {
   CheckCircle2,
   Bell,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  X
 } from 'lucide-react';
-import { getVideoDetails } from '../services/api';
+import { getVideoDetails, getVideoComments } from '../services/api';
 import { formatViews } from '../utils/formatters';
 import { useApp } from '../context/AppContext';
 import VideoPlayer from '../components/player/VideoPlayer';
@@ -32,6 +33,9 @@ export default function WatchPage() {
   const [shareOpen, setShareOpen] = useState(false);
   const [downloadOpen, setDownloadOpen] = useState(false);
   const [autoplay, setAutoplay] = useState(true);
+  const [commentsDrawerOpen, setCommentsDrawerOpen] = useState(false);
+  const [commentCount, setCommentCount] = useState('');
+  const [topComment, setTopComment] = useState(null);
   const nextVideoRef = useRef(null);
 
   const {
@@ -51,6 +55,7 @@ export default function WatchPage() {
     let active = true;
     setLoading(true);
     setDescExpanded(false);
+    setCommentsDrawerOpen(false);
 
     getVideoDetails(videoId).then((details) => {
       if (active) {
@@ -60,10 +65,34 @@ export default function WatchPage() {
       }
     });
 
+    getVideoComments(videoId).then((res) => {
+      if (active) {
+        setCommentCount(res.totalCount || 'Comments');
+        setTopComment(res.comments?.[0] || null);
+      }
+    });
+
     return () => {
       active = false;
     };
   }, [videoId]);
+
+  // Lock body scroll when mobile comments drawer is open
+  useEffect(() => {
+    if (commentsDrawerOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [commentsDrawerOpen]);
+
+  const handleCommentsLoaded = (count, top) => {
+    if (count) setCommentCount(count);
+    if (top) setTopComment(top);
+  };
 
   // Autoplay next video automatically when current video finishes
   const handleVideoEnded = () => {
@@ -255,12 +284,72 @@ export default function WatchPage() {
               </div>
             </div>
 
-            {/* Comments Section */}
-            <CommentsSection videoId={video.id} />
+            {/* Mobile Comments Preview Teaser Card (Real YouTube App UX) */}
+            <div className="block lg:hidden mt-3.5">
+              <div
+                onClick={() => setCommentsDrawerOpen(true)}
+                className="p-3 bg-neutral-100 dark:bg-neutral-850 hover:bg-neutral-200/80 dark:hover:bg-neutral-800 rounded-2xl cursor-pointer transition border border-neutral-200 dark:border-neutral-800/80 shadow-xs"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-xs sm:text-sm text-neutral-900 dark:text-neutral-100">
+                      Comments
+                    </span>
+                    <span className="text-[11px] sm:text-xs text-neutral-500 dark:text-neutral-400 font-medium">
+                      {commentCount || ''}
+                    </span>
+                  </div>
+                  <ChevronDown className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
+                </div>
+
+                {topComment ? (
+                  <div className="flex items-center gap-2.5 mt-2">
+                    <img
+                      src={topComment.avatar}
+                      alt={topComment.author}
+                      onError={(e) => {
+                        e.target.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop';
+                      }}
+                      className="w-6 h-6 rounded-full object-cover shrink-0 ring-1 ring-neutral-300 dark:ring-neutral-700"
+                    />
+                    <p className="text-xs text-neutral-700 dark:text-neutral-300 line-clamp-1 flex-1">
+                      <span className="font-semibold text-neutral-900 dark:text-neutral-200 mr-1.5">
+                        {topComment.author}
+                      </span>
+                      {topComment.text}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-xs text-neutral-400 dark:text-neutral-500 italic mt-1.5">
+                    Tap to view comments...
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Mobile Related Videos (Immediately scrollable below comments preview!) */}
+            <div className="block lg:hidden mt-4">
+              <RelatedVideos
+                currentVideoId={video.id}
+                currentCategory={video.category}
+                videoTitle={video.title}
+                channelName={video.channel}
+                autoplay={autoplay}
+                onToggleAutoplay={() => setAutoplay(a => !a)}
+                onNextVideoDetermined={(nextVid) => {
+                  nextVideoRef.current = nextVid;
+                }}
+              />
+            </div>
+
+            {/* Desktop Comments Section (Inline on large screens) */}
+            <div className="hidden lg:block">
+              <CommentsSection videoId={video.id} onCountLoaded={handleCommentsLoaded} />
+            </div>
           </div>
 
-          {/* Right Column / Related Recommendations */}
-          <div className="w-full lg:w-96 xl:w-[420px] shrink-0 mt-6 lg:mt-0">
+          {/* Right Column / Related Recommendations (Desktop Only) */}
+          <div className="hidden lg:block w-96 xl:w-[420px] shrink-0 mt-6 lg:mt-0">
             <RelatedVideos
               currentVideoId={video.id}
               currentCategory={video.category}
@@ -275,6 +364,53 @@ export default function WatchPage() {
           </div>
         </div>
       </div>
+
+      {/* Mobile Bottom Sheet Comments Drawer */}
+      {commentsDrawerOpen && (
+        <div className="fixed inset-0 z-50 flex flex-col justify-end lg:hidden">
+          {/* Dimmed backdrop */}
+          <div
+            onClick={() => setCommentsDrawerOpen(false)}
+            className="fixed inset-0 bg-black/60 backdrop-blur-[2px] transition-opacity duration-300 animate-in fade-in"
+          />
+
+          {/* Bottom Sheet Modal */}
+          <div className="relative z-10 w-full bg-white dark:bg-[#181818] rounded-t-3xl max-h-[85vh] h-[80vh] flex flex-col shadow-2xl border-t border-neutral-200 dark:border-neutral-800 animate-in slide-in-from-bottom duration-300 overflow-hidden">
+            {/* Grab pill */}
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="w-10 h-1 rounded-full bg-neutral-300 dark:bg-neutral-600" />
+            </div>
+
+            {/* Drawer Header with Title, Count, and Close Button */}
+            <div className="flex items-center justify-between px-4 py-2.5 border-b border-neutral-200 dark:border-neutral-800">
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-base text-neutral-900 dark:text-neutral-100">Comments</h3>
+                {commentCount && (
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 font-medium">
+                    {commentCount}
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => setCommentsDrawerOpen(false)}
+                className="p-1.5 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300 transition cursor-pointer"
+                title="Close comments"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Drawer Body - Scrollable comments section */}
+            <div className="flex-1 overflow-y-auto px-4 pb-8">
+              <CommentsSection
+                videoId={video.id}
+                isDrawer={true}
+                onCountLoaded={handleCommentsLoaded}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Share & Download Modals */}
       <ShareModal video={video} isOpen={shareOpen} onClose={() => setShareOpen(false)} />

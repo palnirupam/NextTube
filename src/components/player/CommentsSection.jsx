@@ -3,7 +3,7 @@ import { ThumbsUp, ThumbsDown, MessageSquare, ArrowUpDown, Trash2, Heart, Messag
 import { useApp } from '../../context/AppContext';
 import { getVideoComments } from '../../services/api';
 
-export default function CommentsSection({ videoId }) {
+export default function CommentsSection({ videoId, isDrawer = false, onCountLoaded }) {
   const { showToast } = useApp();
   const [comments, setComments] = useState([]);
   const [totalCount, setTotalCount] = useState('Comments');
@@ -18,9 +18,12 @@ export default function CommentsSection({ videoId }) {
 
     getVideoComments(videoId).then((res) => {
       if (active) {
-        setComments(res.comments || []);
-        setTotalCount(res.totalCount || 'Comments');
+        const commentList = res.comments || [];
+        const count = res.totalCount || 'Comments';
+        setComments(commentList);
+        setTotalCount(count);
         setLoading(false);
+        onCountLoaded?.(count, commentList[0] || null);
       }
     });
 
@@ -85,12 +88,14 @@ export default function CommentsSection({ videoId }) {
   };
 
   return (
-    <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-800">
+    <div className={isDrawer ? 'py-2' : 'mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-800'}>
       {/* Header & Sorting */}
-      <div className="flex items-center gap-6 mb-6">
-        <h3 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-neutral-100">
-          {totalCount}
-        </h3>
+      <div className={`flex items-center gap-6 mb-4 ${isDrawer ? 'justify-end' : ''}`}>
+        {!isDrawer && (
+          <h3 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-neutral-100">
+            {totalCount}
+          </h3>
+        )}
         <button
           onClick={() => setSortBy(sortBy === 'top' ? 'newest' : 'top')}
           className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition"
