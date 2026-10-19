@@ -13,6 +13,7 @@ import {
 export default function VideoPlayer({
   videoId,
   title,
+  channel,
   isTheater,
   onToggleTheater,
   onEnded,
@@ -24,6 +25,9 @@ export default function VideoPlayer({
 
   const wrapperRef = useRef(null);
   const iframeRef = useRef(null);
+  const silentAudioRef = useRef(null);
+  const isPlayingRef = useRef(true);
+  const userPausedRef = useRef(false);
 
   // Fullscreen toggle supporting standard & webkit
   const toggleFullscreen = useCallback(() => {
@@ -76,20 +80,102 @@ export default function VideoPlayer({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [toggleFullscreen, onToggleTheater]);
 
-  // Listen for video ended event to trigger autoplay
+  const playSilentAudio = useCallback(() => {
+    try {
+      if (!silentAudioRef.current) {
+        // Continuous silent WAV audio element to guarantee Android AudioFocus & prevent WebView suspend
+        const audio = new Audio('data:audio/wav;base64,UklGRjIAAABXQVZFZm10IBIAAAABAAEAQB8AAEAfAAABAAgAAABmYWN0BAAAAAAAAABkYXRhAAAAAA==');
+        audio.loop = true;
+        audio.volume = 0.001;
+        silentAudioRef.current = audio;
+      }
+      silentAudioRef.current.play().catch(() => {});
+    } catch {}
+  }, []);
+
+  const pauseSilentAudio = useCallback(() => {
+    try {
+      silentAudioRef.current?.pause();
+    } catch {}
+  }, []);
+
+  const sendIframeCommand = useCallback((command) => {
+    if (iframeRef.current?.contentWindow) {
+      iframeRef.current.contentWindow.postMessage(
+        JSON.stringify({ event: 'command', func: command, args: '' }),
+        '*'
+      );
+    }
+  }, []);
+
+  // Sync with native Android Foreground Service & manage background screen-off playback
+  useEffect(() => {
+    isPlayingRef.current = true;
+    userPausedRef.current = false;
+    playSilentAudio();
+
+    if (window.PlayTubeNative?.onVideoStarted) {
+      window.PlayTubeNative.onVideoStarted(title || 'PlayTube Stream', channel || 'PlayTube Background Player');
+    }
+
+    const handleScreenLockOrBlur = () => {
+      // If user did not explicitly press pause and screen locked or blurred, keep playing
+      if (isPlayingRef.current && !userPausedRef.current) {
+        playSilentAudio();
+        setTimeout(() => sendIframeCommand('playVideo'), 150);
+        setTimeout(() => sendIframeCommand('playVideo'), 500);
+      }
+    };
+
+    window.addEventListener('blur', handleScreenLockOrBlur);
+    window.addEventListener('playtube_background_lock', handleScreenLockOrBlur);
+    document.addEventListener('visibilitychange', handleScreenLockOrBlur);
+
+    return () => {
+      window.removeEventListener('blur', handleScreenLockOrBlur);
+      window.removeEventListener('playtube_background_lock', handleScreenLockOrBlur);
+      document.removeEventListener('visibilitychange', handleScreenLockOrBlur);
+      pauseSilentAudio();
+      window.PlayTubeNative?.onVideoStopped?.();
+    };
+  }, [videoId, title, channel, playSilentAudio, pauseSilentAudio, sendIframeCommand]);
+
+  // Listen for iframe state events (autoplay, background state change, ended)
   useEffect(() => {
     const handlePostMessage = (event) => {
       try {
         const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
         if (!data) return;
+
+        // Video ended -> trigger autoplay next
         if (data.event === 'infoDelivery' && data.info?.playerState === 0) {
+          isPlayingRef.current = false;
+          window.PlayTubeNative?.onVideoStopped?.();
           onEnded?.();
+          return;
+        }
+
+        // State changes: 1 = playing, 2 = paused
+        if (data.event === 'infoDelivery' && typeof data.info?.playerState === 'number') {
+          const state = data.info.playerState;
+          if (state === 1) {
+            isPlayingRef.current = true;
+            userPausedRef.current = false;
+            playSilentAudio();
+            window.PlayTubeNative?.onVideoStarted?.(title || 'PlayTube Stream', channel || 'PlayTube Background Player');
+          } else if (state === 2) {
+            // Auto-paused by OS screen lock or blur while user didn't request pause -> resume!
+            if (!userPausedRef.current && (document.hidden || !document.hasFocus())) {
+              playSilentAudio();
+              setTimeout(() => sendIframeCommand('playVideo'), 100);
+            }
+          }
         }
       } catch {}
     };
     window.addEventListener('message', handlePostMessage);
     return () => window.removeEventListener('message', handlePostMessage);
-  }, [onEnded]);
+  }, [onEnded, title, channel, playSilentAudio, sendIframeCommand]);
 
   // Screen-Off & Lock-Screen Media Session Integration (YouTube Premium Feature)
   useEffect(() => {
@@ -97,8 +183,8 @@ export default function VideoPlayer({
       try {
         navigator.mediaSession.metadata = new MediaMetadata({
           title: title || 'PlayTube Stream',
-          artist: 'PlayTube Background Player',
-          album: 'PlayTube Ad-Free Stream',
+          artist: channel || 'PlayTube Background Player',
+          album: 'PlayTube Screen-Off Streaming',
           artwork: [
             { src: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`, sizes: '480x360', type: 'image/jpeg' },
             { src: `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`, sizes: '320x180', type: 'image/jpeg' }
@@ -108,20 +194,33 @@ export default function VideoPlayer({
         navigator.mediaSession.playbackState = 'playing';
 
         navigator.mediaSession.setActionHandler('play', () => {
-          if (iframeRef.current?.contentWindow) {
-            iframeRef.current.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'playVideo' }), '*');
-          }
+          userPausedRef.current = false;
+          isPlayingRef.current = true;
+          playSilentAudio();
+          sendIframeCommand('playVideo');
+          window.PlayTubeNative?.onVideoStarted?.(title, channel);
         });
+
         navigator.mediaSession.setActionHandler('pause', () => {
-          if (iframeRef.current?.contentWindow) {
-            iframeRef.current.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'pauseVideo' }), '*');
-          }
+          userPausedRef.current = true;
+          isPlayingRef.current = false;
+          pauseSilentAudio();
+          sendIframeCommand('pauseVideo');
+          window.PlayTubeNative?.onVideoPaused?.();
+        });
+
+        navigator.mediaSession.setActionHandler('stop', () => {
+          userPausedRef.current = true;
+          isPlayingRef.current = false;
+          pauseSilentAudio();
+          sendIframeCommand('stopVideo');
+          window.PlayTubeNative?.onVideoStopped?.();
         });
       } catch (e) {
         console.warn('MediaSession notice:', e);
       }
     }
-  }, [videoId, title]);
+  }, [videoId, title, channel, playSilentAudio, pauseSilentAudio, sendIframeCommand]);
 
   if (!videoId) {
     return (

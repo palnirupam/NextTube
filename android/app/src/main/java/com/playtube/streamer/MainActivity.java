@@ -1,13 +1,24 @@
 package com.playtube.streamer;
 
+import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.media.AudioAttributes;
+import android.media.AudioFocusRequest;
+import android.media.AudioManager;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.PowerManager;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.FrameLayout;
+import androidx.core.content.ContextCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
@@ -18,17 +29,34 @@ public class MainActivity extends BridgeActivity {
     private View customView;
     private WebChromeClient.CustomViewCallback customViewCallback;
     private FrameLayout fullscreenContainer;
+    private PowerManager.WakeLock wakeLock;
+    private AudioManager audioManager;
+    private String currentVideoTitle = "PlayTube Stream";
+    private String currentChannelName = "Playing in background";
+    private boolean isPlaying = false;
+    private final Handler handler = new Handler(Looper.getMainLooper());
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        // Initialize WakeLock to prevent CPU sleep when screen is locked
+        try {
+            PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+            if (pm != null) {
+                wakeLock = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "PlayTube:ActivityWakeLock");
+            }
+            audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
+            requestAudioFocus();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         // Hardware-accelerated media streaming & WebView configuration
         try {
             WebView webView = getBridge().getWebView();
             if (webView != null) {
                 WebSettings settings = webView.getSettings();
-                // Critical: Allow videos and audio to play smoothly without gesture restrictions
                 settings.setMediaPlaybackRequiresUserGesture(false);
                 settings.setJavaScriptEnabled(true);
                 settings.setDomStorageEnabled(true);
@@ -36,6 +64,9 @@ public class MainActivity extends BridgeActivity {
                 settings.setAllowFileAccess(true);
                 settings.setAllowContentAccess(true);
                 settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+
+                // Expose native bridge for seamless background & lock screen media sync
+                webView.addJavascriptInterface(new PlayTubeNativeInterface(), "PlayTubeNative");
 
                 // Enable Fullscreen Video Support in WebView with auto landscape rotation
                 webView.setWebChromeClient(new BridgeWebChromeClient(getBridge()) {
@@ -107,10 +138,72 @@ public class MainActivity extends BridgeActivity {
         }
     }
 
+    private void requestAudioFocus() {
+        if (audioManager == null) return;
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                AudioAttributes attributes = new AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build();
+                AudioFocusRequest focusRequest = new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                    .setAudioAttributes(attributes)
+                    .build();
+                audioManager.requestAudioFocus(focusRequest);
+            } else {
+                audioManager.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN);
+            }
+        } catch (Exception ignored) {}
+    }
+
+    public class PlayTubeNativeInterface {
+        @JavascriptInterface
+        public void onVideoStarted(String title, String channel) {
+            isPlaying = true;
+            if (title != null && !title.isEmpty()) currentVideoTitle = title;
+            if (channel != null && !channel.isEmpty()) currentChannelName = channel;
+            runOnUiThread(() -> startPlaybackService());
+        }
+
+        @JavascriptInterface
+        public void onVideoPaused() {
+            // Keep service ready or active
+        }
+
+        @JavascriptInterface
+        public void onVideoStopped() {
+            isPlaying = false;
+            runOnUiThread(() -> stopPlaybackService());
+        }
+    }
+
+    public void startPlaybackService() {
+        try {
+            Intent intent = new Intent(this, MediaPlaybackService.class);
+            intent.setAction(MediaPlaybackService.ACTION_START);
+            intent.putExtra(MediaPlaybackService.EXTRA_TITLE, currentVideoTitle);
+            intent.putExtra(MediaPlaybackService.EXTRA_ARTIST, currentChannelName + " • Screen-off Playback Active");
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                ContextCompat.startForegroundService(this, intent);
+            } else {
+                startService(intent);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void stopPlaybackService() {
+        try {
+            Intent intent = new Intent(this, MediaPlaybackService.class);
+            intent.setAction(MediaPlaybackService.ACTION_STOP);
+            startService(intent);
+        } catch (Exception ignored) {}
+    }
+
     @Override
     public void onBackPressed() {
         if (customView != null) {
-            // If in fullscreen video, exit fullscreen on back press
             WebChromeClient client = getBridge().getWebView().getWebChromeClient();
             if (client != null) {
                 client.onHideCustomView();
@@ -123,14 +216,86 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onPause() {
         super.onPause();
-        // Background Playback: Prevent WebView from stopping timers/audio when screen locks
+        keepAudioPlaying();
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+        keepAudioPlaying();
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
         try {
             WebView webView = getBridge().getWebView();
             if (webView != null) {
+                webView.onResume();
                 webView.resumeTimers();
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private void keepAudioPlaying() {
+        try {
+            if (wakeLock != null && !wakeLock.isHeld()) {
+                wakeLock.acquire(45 * 60 * 1000L); // Keep CPU awake for 45 mins
+            }
+            if (isPlaying) {
+                startPlaybackService();
+            }
+
+            WebView webView = getBridge().getWebView();
+            if (webView != null) {
+                // Prevent WebView from freezing timers & HTML5 audio
+                webView.onResume();
+                webView.resumeTimers();
+
+                // Force YouTube iframe to resume playing when the screen is locked
+                handler.postDelayed(() -> {
+                    try {
+                        webView.evaluateJavascript(
+                            "(function() {" +
+                            "  var iframes = document.querySelectorAll('iframe');" +
+                            "  iframes.forEach(function(f) {" +
+                            "    try { f.contentWindow.postMessage('{\"event\":\"command\",\"func\":\"playVideo\",\"args\":\"\"}', '*'); } catch(e){}" +
+                            "  });" +
+                            "})();",
+                            null
+                        );
+                    } catch (Exception ignored) {}
+                }, 200);
+
+                handler.postDelayed(() -> {
+                    try {
+                        webView.evaluateJavascript(
+                            "(function() {" +
+                            "  var iframes = document.querySelectorAll('iframe');" +
+                            "  iframes.forEach(function(f) {" +
+                            "    try { f.contentWindow.postMessage('{\"event\":\"command\",\"func\":\"playVideo\",\"args\":\"\"}', '*'); } catch(e){}" +
+                            "  });" +
+                            "})();",
+                            null
+                        );
+                    } catch (Exception ignored) {}
+                }, 600);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        try {
+            if (wakeLock != null && wakeLock.isHeld()) {
+                wakeLock.release();
+            }
+            stopPlaybackService();
+        } catch (Exception ignored) {}
+        super.onDestroy();
     }
 }

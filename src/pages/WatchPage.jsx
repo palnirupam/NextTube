@@ -129,6 +129,7 @@ export default function WatchPage() {
               key={video.id}
               videoId={video.id}
               title={video.title}
+              channel={video.channel}
               isTheater={isTheater}
               onToggleTheater={() => setIsTheater(false)}
               onEnded={handleVideoEnded}
@@ -149,6 +150,7 @@ export default function WatchPage() {
                 key={video.id}
                 videoId={video.id}
                 title={video.title}
+                channel={video.channel}
                 isTheater={isTheater}
                 onToggleTheater={() => setIsTheater(true)}
                 onEnded={handleVideoEnded}
