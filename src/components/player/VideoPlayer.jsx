@@ -204,13 +204,18 @@ export default function VideoPlayer({ videoId, title, isTheater, onToggleTheater
     setCurrentTime(0);
     setIsPlaying(true);
 
+    if (playerRef.current && typeof playerRef.current.loadVideoById === 'function') {
+      try {
+        playerRef.current.loadVideoById(videoId);
+        playerRef.current.playVideo();
+        return;
+      } catch (e) {
+        console.warn('loadVideoById fallback notice:', e);
+      }
+    }
+
     function attachPlayer() {
       if (!iframeRef.current || !window.YT || !window.YT.Player) return;
-      try {
-        if (playerRef.current && playerRef.current.destroy) {
-          playerRef.current.destroy();
-        }
-      } catch {}
 
       try {
         playerRef.current = new window.YT.Player(iframeRef.current, {
@@ -336,8 +341,8 @@ export default function VideoPlayer({ videoId, title, isTheater, onToggleTheater
       <div className={`relative w-full bg-black overflow-hidden shadow-2xl transition-all duration-300 ${
         isTheater || isFullscreen ? 'rounded-none border-0' : 'rounded-3xl border border-neutral-800/80'
       }`}>
-        {/* 16:9 Video Canvas */}
-        <div className={`relative w-full bg-black ${isFullscreen ? 'h-screen' : 'aspect-video'}`}>
+        {/* 16:9 Video Canvas (Overscan 114% to push out YouTube watermark and native overlay links) */}
+        <div className={`relative w-full bg-black overflow-hidden ${isFullscreen ? 'h-screen' : 'aspect-video'}`}>
           <iframe
             ref={iframeRef}
             id={`yt-player-${videoId}`}
@@ -345,7 +350,7 @@ export default function VideoPlayer({ videoId, title, isTheater, onToggleTheater
             title={title || 'PlayTube Video Player'}
             referrerPolicy="origin"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            className="w-full h-full border-0 absolute inset-0 pointer-events-none"
+            className="w-[114%] h-[114%] -left-[7%] -top-[7%] border-0 absolute pointer-events-none"
           />
 
           {/* Click Overlay (Play / Pause & Double-Click Fullscreen) */}
@@ -459,14 +464,16 @@ export default function VideoPlayer({ videoId, title, isTheater, onToggleTheater
                       <Volume2 className="w-5 h-5" />
                     )}
                   </button>
-                  <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={isMuted ? 0 : volume}
-                    onChange={(e) => handleVolumeChange(parseInt(e.target.value, 10))}
-                    className="w-0 group-hover/vol:w-16 sm:group-hover/vol:w-20 transition-all duration-200 accent-red-600 cursor-pointer h-1 rounded-lg"
-                  />
+                  <div className="w-0 group-hover/vol:w-16 sm:group-hover/vol:w-20 transition-all duration-200 overflow-hidden flex items-center">
+                    <input
+                      type="range"
+                      min="0"
+                      max="100"
+                      value={isMuted ? 0 : volume}
+                      onChange={(e) => handleVolumeChange(parseInt(e.target.value, 10))}
+                      className="w-16 sm:w-20 accent-red-600 cursor-pointer h-1 rounded-lg shrink-0"
+                    />
+                  </div>
                 </div>
 
                 {/* Time Display */}

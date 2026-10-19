@@ -85,6 +85,7 @@ export default function WatchPage() {
         <div className="w-full bg-black mb-6">
           <div className="max-w-6xl mx-auto">
             <VideoPlayer
+              key={video.id}
               videoId={video.id}
               title={video.title}
               isTheater={isTheater}
@@ -102,6 +103,7 @@ export default function WatchPage() {
             {/* Standard Mode Player */}
             {!isTheater && (
               <VideoPlayer
+                key={video.id}
                 videoId={video.id}
                 title={video.title}
                 isTheater={isTheater}
@@ -132,7 +134,7 @@ export default function WatchPage() {
                     <CheckCircle2 className="w-4 h-4 text-neutral-400 fill-neutral-400 text-[#0f0f0f]" />
                   </div>
                   <span className="text-xs text-neutral-400">
-                    {video.subscribers || '1.4M'} subscribers
+                    {video.subscribers?.toLowerCase().includes('sub') ? video.subscribers : `${video.subscribers || '1.4M'} subscribers`}
                   </span>
                 </div>
 
