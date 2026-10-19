@@ -1,17 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CURATED_VIDEOS } from '../../services/api';
+import { getRelatedVideos, CURATED_VIDEOS } from '../../services/api';
 import { formatViews } from '../../utils/formatters';
 import { useApp } from '../../context/AppContext';
 
-export default function RelatedVideos({ currentVideoId, currentCategory }) {
+export default function RelatedVideos({ currentVideoId, currentCategory, videoTitle, channelName }) {
   const [autoplay, setAutoplay] = useState(true);
   const [filter, setFilter] = useState('All');
+  const [relatedList, setRelatedList] = useState(CURATED_VIDEOS.filter(v => v.id !== currentVideoId));
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { addToHistory } = useApp();
 
-  // Related videos excluding the current one
-  const relatedList = CURATED_VIDEOS.filter(v => v.id !== currentVideoId);
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+
+    getRelatedVideos(currentVideoId, videoTitle || channelName || currentCategory).then((items) => {
+      if (active && items && items.length > 0) {
+        setRelatedList(items.filter(v => v.id !== currentVideoId));
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [currentVideoId, videoTitle, channelName, currentCategory]);
 
   const filters = ['All', 'From related artist', 'Related', 'Recently uploaded'];
 

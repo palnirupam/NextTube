@@ -854,3 +854,78 @@ export function getSearchSuggestions(query) {
     }, 2000);
   });
 }
+
+/**
+ * Deep REA Related Videos from YouTube /next endpoint
+ * Returns official YouTube recommendations for the currently playing video
+ */
+export async function getRelatedVideos(videoId, fallbackQuery = '') {
+  if (!videoId) return CURATED_VIDEOS;
+
+  try {
+    const payload = {
+      context: {
+        client: {
+          clientName: 'WEB',
+          clientVersion: '2.20240101.01.00',
+          hl: 'en',
+          gl: 'US'
+        }
+      },
+      videoId: videoId
+    };
+
+    const data = await postYouTubeAPI('/youtubei/v1/next', payload);
+    const results = data.contents?.twoColumnWatchNextResults?.secondaryResults?.secondaryResults?.results || [];
+    const related = [];
+
+    for (const item of results) {
+      if (item.lockupViewModel && item.lockupViewModel.contentId) {
+        related.push(parseLockup(item.lockupViewModel));
+      } else if (item.compactVideoRenderer && item.compactVideoRenderer.videoId) {
+        const cvr = item.compactVideoRenderer;
+        const vId = cvr.videoId;
+        const title = cvr.title?.simpleText || cvr.title?.runs?.map(r => r.text).join('') || 'Related Video';
+        const channel = cvr.shortBylineText?.runs?.[0]?.text || 'YouTube Creator';
+        const views = cvr.viewCountText?.simpleText || '100K views';
+        const duration = cvr.lengthText?.simpleText || '3:45';
+        const thumbs = cvr.thumbnail?.thumbnails || [];
+        const thumb = cleanMediaUrl(thumbs[thumbs.length - 1]?.url) || `https://i.ytimg.com/vi/${vId}/hqdefault.jpg`;
+
+        related.push({
+          id: vId,
+          title,
+          channel,
+          channelId: `UC_${channel.replace(/\s+/g, '')}`,
+          channelAvatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(channel)}`,
+          thumbnail: thumb,
+          duration,
+          views,
+          timestamp: cvr.publishedTimeText?.simpleText || 'Recommended',
+          category: 'Music',
+          description: `Watch ${title} on PlayTube.`
+        });
+      }
+    }
+
+    if (related.length > 0) {
+      return related;
+    }
+  } catch (err) {
+    console.warn('Real YouTube related videos notice:', err);
+  }
+
+  // Fallback: search by query or title if available
+  if (fallbackQuery && fallbackQuery.trim()) {
+    try {
+      const searchRes = await searchVideos(fallbackQuery);
+      if (searchRes.videos && searchRes.videos.length > 0) {
+        return searchRes.videos.filter(v => v.id !== videoId);
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return CURATED_VIDEOS.filter(v => v.id !== videoId);
+}

@@ -1,168 +1,575 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
+  Play,
+  Pause,
+  Volume2,
+  Volume1,
+  VolumeX,
+  Maximize,
+  Minimize,
   Tv,
-  Sparkles,
-  Settings2,
-  Lightbulb
+  Settings,
+  Lightbulb,
+  RotateCcw,
+  RotateCw,
+  Check
 } from 'lucide-react';
 
+function formatTime(seconds) {
+  if (isNaN(seconds) || seconds < 0) return '0:00';
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  if (h > 0) {
+    return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
 export default function VideoPlayer({ videoId, title, isTheater, onToggleTheater }) {
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolume] = useState(100);
+  const [isMuted, setIsMuted] = useState(false);
   const [playbackSpeed, setPlaybackSpeed] = useState('1');
   const [quality, setQuality] = useState('1080p HD');
-  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
-  const [showQualityMenu, setShowQualityMenu] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showControls, setShowControls] = useState(true);
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [ambientLighting, setAmbientLighting] = useState(true);
+  const [centerRipple, setCenterRipple] = useState(null);
+  const [hoverSeekTime, setHoverSeekTime] = useState(null);
+  const [hoverSeekPos, setHoverSeekPos] = useState(0);
+
+  const wrapperRef = useRef(null);
+  const iframeRef = useRef(null);
+  const playerRef = useRef(null);
+  const seekbarRef = useRef(null);
+  const hideTimeoutRef = useRef(null);
+  const isDraggingSeek = useRef(false);
+
+  // Send command to YouTube Player (API or postMessage fallback)
+  const sendCommand = useCallback((func, args = []) => {
+    if (playerRef.current && typeof playerRef.current[func] === 'function') {
+      try {
+        playerRef.current[func](...args);
+        return;
+      } catch (e) {
+        // fallback
+      }
+    }
+    if (iframeRef.current && iframeRef.current.contentWindow) {
+      try {
+        iframeRef.current.contentWindow.postMessage(
+          JSON.stringify({ event: 'command', func, args }),
+          '*'
+        );
+      } catch (e) {}
+    }
+  }, []);
+
+  const triggerCenterRipple = useCallback((type) => {
+    setCenterRipple(type);
+    setTimeout(() => setCenterRipple(null), 500);
+  }, []);
+
+  const togglePlay = useCallback(() => {
+    if (isPlaying) {
+      sendCommand('pauseVideo');
+      setIsPlaying(false);
+      triggerCenterRipple('pause');
+      setShowControls(true);
+    } else {
+      sendCommand('playVideo');
+      setIsPlaying(true);
+      triggerCenterRipple('play');
+    }
+  }, [isPlaying, sendCommand, triggerCenterRipple]);
+
+  const seek = useCallback((time) => {
+    const clamped = Math.max(0, Math.min(time, duration || 1000));
+    setCurrentTime(clamped);
+    sendCommand('seekTo', [clamped, true]);
+  }, [duration, sendCommand]);
+
+  const handleVolumeChange = useCallback((newVol) => {
+    setVolume(newVol);
+    if (newVol === 0) {
+      setIsMuted(true);
+      sendCommand('mute');
+    } else {
+      setIsMuted(false);
+      sendCommand('unMute');
+      sendCommand('setVolume', [newVol]);
+    }
+  }, [sendCommand]);
+
+  const toggleMute = useCallback(() => {
+    if (isMuted) {
+      setIsMuted(false);
+      sendCommand('unMute');
+      sendCommand('setVolume', [volume || 100]);
+    } else {
+      setIsMuted(true);
+      sendCommand('mute');
+    }
+  }, [isMuted, volume, sendCommand]);
+
+  const setSpeed = useCallback((speed) => {
+    setPlaybackSpeed(speed);
+    sendCommand('setPlaybackRate', [parseFloat(speed)]);
+    setShowSettingsMenu(false);
+  }, [sendCommand]);
+
+  const handleQualitySelect = useCallback((q) => {
+    setQuality(q);
+    const vq = q.includes('1080') ? 'hd1080' : q.includes('720') ? 'hd720' : 'large';
+    try {
+      sendCommand('setPlaybackQuality', [vq]);
+    } catch {}
+    setShowSettingsMenu(false);
+  }, [sendCommand]);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!wrapperRef.current) return;
+    if (!document.fullscreenElement) {
+      wrapperRef.current.requestFullscreen().catch(() => {});
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen().catch(() => {});
+      setIsFullscreen(false);
+    }
+  }, []);
+
+  // Listen to fullscreenchange
+  useEffect(() => {
+    const onFsChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => document.removeEventListener('fullscreenchange', onFsChange);
+  }, []);
+
+  // Mouse activity timer for auto-hiding controls
+  const handleMouseMove = useCallback(() => {
+    setShowControls(true);
+    clearTimeout(hideTimeoutRef.current);
+    if (isPlaying && !showSettingsMenu) {
+      hideTimeoutRef.current = setTimeout(() => {
+        setShowControls(false);
+      }, 2500);
+    }
+  }, [isPlaying, showSettingsMenu]);
+
+  // Keyboard Shortcuts
+  useEffect(() => {
+    function handleKeyDown(e) {
+      if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+
+      if (e.code === 'Space' || e.key === 'k' || e.key === 'K') {
+        e.preventDefault();
+        togglePlay();
+      } else if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        toggleFullscreen();
+      } else if (e.key === 'm' || e.key === 'M') {
+        e.preventDefault();
+        toggleMute();
+      } else if (e.key === 't' || e.key === 'T') {
+        e.preventDefault();
+        onToggleTheater?.();
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        seek(currentTime + 5);
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        seek(currentTime - 5);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        handleVolumeChange(Math.min(100, volume + 10));
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        handleVolumeChange(Math.max(0, volume - 10));
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [togglePlay, toggleFullscreen, toggleMute, onToggleTheater, seek, currentTime, handleVolumeChange, volume]);
+
+  // Initialize YT API & attach player
+  useEffect(() => {
+    let isMounted = true;
+    setCurrentTime(0);
+    setIsPlaying(true);
+
+    function attachPlayer() {
+      if (!iframeRef.current || !window.YT || !window.YT.Player) return;
+      try {
+        if (playerRef.current && playerRef.current.destroy) {
+          playerRef.current.destroy();
+        }
+      } catch {}
+
+      try {
+        playerRef.current = new window.YT.Player(iframeRef.current, {
+          events: {
+            onReady: (event) => {
+              if (!isMounted) return;
+              const dur = event.target.getDuration();
+              if (dur && dur > 0) setDuration(dur);
+              event.target.playVideo();
+              try {
+                event.target.setPlaybackQuality('hd1080');
+              } catch {}
+            },
+            onStateChange: (event) => {
+              if (!isMounted) return;
+              if (event.data === 1) {
+                // Playing
+                setIsPlaying(true);
+              } else if (event.data === 2) {
+                // Paused
+                setIsPlaying(false);
+                setShowControls(true);
+              } else if (event.data === 0) {
+                // Ended
+                setIsPlaying(false);
+                setShowControls(true);
+              }
+            }
+          }
+        });
+      } catch (err) {
+        console.warn('YT Player init notice:', err);
+      }
+    }
+
+    if (!window.YT) {
+      if (!document.getElementById('yt-iframe-api')) {
+        const tag = document.createElement('script');
+        tag.id = 'yt-iframe-api';
+        tag.src = 'https://www.youtube.com/iframe_api';
+        document.body.appendChild(tag);
+      }
+      const prevHandler = window.onYouTubeIframeAPIReady;
+      window.onYouTubeIframeAPIReady = () => {
+        if (prevHandler) prevHandler();
+        if (isMounted) attachPlayer();
+      };
+    } else {
+      attachPlayer();
+    }
+
+    // Interval to track currentTime & duration smoothly
+    const interval = setInterval(() => {
+      if (!isDraggingSeek.current && playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
+        try {
+          const curr = playerRef.current.getCurrentTime();
+          const dur = playerRef.current.getDuration();
+          if (typeof curr === 'number' && !isNaN(curr)) {
+            setCurrentTime(curr);
+          }
+          if (typeof dur === 'number' && dur > 0 && !isNaN(dur)) {
+            setDuration(dur);
+          }
+        } catch {}
+      }
+    }, 250);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+      clearTimeout(hideTimeoutRef.current);
+    };
+  }, [videoId]);
+
+  // Seekbar interaction handlers
+  const handleSeekbarClick = (e) => {
+    if (!seekbarRef.current || !duration) return;
+    const rect = seekbarRef.current.getBoundingClientRect();
+    const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    seek(pos * duration);
+  };
+
+  const handleSeekbarMouseMove = (e) => {
+    if (!seekbarRef.current || !duration) return;
+    const rect = seekbarRef.current.getBoundingClientRect();
+    const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    setHoverSeekPos(pos * 100);
+    setHoverSeekTime(pos * duration);
+  };
 
   if (!videoId) {
     return (
-      <div className="aspect-video w-full bg-neutral-900 rounded-2xl flex items-center justify-center text-neutral-400">
+      <div className="aspect-video w-full bg-neutral-900 rounded-3xl flex items-center justify-center text-neutral-400">
         No video selected
       </div>
     );
   }
 
-  // Force 1080p Ultra HD and Ad-Free parameters
-  const qualityParam = quality.includes('1080') ? 'hd1080' : quality.includes('720') ? 'hd720' : 'large';
   const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173';
-  const embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&iv_load_policy=3&playsinline=1&enablejsapi=1&vq=${qualityParam}&hd=1&origin=${encodeURIComponent(origin)}`;
+  // controls=0 completely suppresses YouTube's native bottom bar, YouTube logo, and "More videos" popup!
+  const embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3&playsinline=1&enablejsapi=1&origin=${encodeURIComponent(origin)}`;
 
   const speeds = ['0.5', '0.75', '1', '1.25', '1.5', '2'];
-  const qualities = ['1080p HD (60fps)', '720p HD', '480p SD', 'Auto (Enhanced)'];
+  const qualities = ['1080p HD (60fps)', '720p HD', '480p SD', 'Auto'];
+  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="relative w-full group/player">
-      {/* Ambient Cinema Lighting Glow (YouTube Ambient Mode) */}
-      {ambientLighting && !isTheater && (
-        <div className="absolute -inset-3 bg-gradient-to-r from-red-600/25 via-purple-600/20 to-rose-600/25 blur-3xl opacity-60 -z-10 transition-opacity duration-700 pointer-events-none rounded-3xl animate-pulse"></div>
+    <div
+      ref={wrapperRef}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={() => {
+        if (isPlaying && !showSettingsMenu) setShowControls(false);
+      }}
+      className={`relative w-full group/player select-none ${
+        isFullscreen ? 'fixed inset-0 z-50 bg-black flex items-center justify-center rounded-none' : ''
+      }`}
+    >
+      {/* Ambient Cinema Lighting Glow (Ambient Mode) */}
+      {ambientLighting && !isTheater && !isFullscreen && (
+        <div className="absolute -inset-4 bg-gradient-to-r from-red-600/20 via-purple-600/15 to-rose-600/20 blur-3xl opacity-60 -z-10 pointer-events-none rounded-3xl"></div>
       )}
 
-      <div className={`relative w-full bg-black overflow-hidden shadow-2xl transition-all duration-300 border border-neutral-800/60 ${
-        isTheater ? 'rounded-none border-x-0' : 'rounded-3xl'
+      <div className={`relative w-full bg-black overflow-hidden shadow-2xl transition-all duration-300 ${
+        isTheater || isFullscreen ? 'rounded-none border-0' : 'rounded-3xl border border-neutral-800/80'
       }`}>
-        {/* 16:9 Aspect Video Container */}
-        <div className="relative aspect-video w-full bg-black overflow-hidden">
+        {/* 16:9 Video Canvas */}
+        <div className={`relative w-full bg-black ${isFullscreen ? 'h-screen' : 'aspect-video'}`}>
           <iframe
-            key={videoId + '-' + quality}
+            ref={iframeRef}
+            id={`yt-player-${videoId}`}
             src={embedUrl}
             title={title || 'PlayTube Video Player'}
             referrerPolicy="origin"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowFullScreen
-            className="w-full h-full border-0 absolute inset-0 pointer-events-auto"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            className="w-full h-full border-0 absolute inset-0 pointer-events-none"
           />
 
-          {/* Sleek PlayTube Top Cinema Overlay Badge */}
-          <div className="absolute top-3 left-4 z-20 pointer-events-none flex items-center gap-2 bg-black/70 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 text-white shadow-xl opacity-0 group-hover/player:opacity-100 transition-opacity duration-300">
-            <div className="w-2 h-2 rounded-full bg-red-600 animate-ping"></div>
-            <span className="text-[11px] font-black tracking-wider text-neutral-100">PlayTube</span>
-            <span className="text-[10px] font-bold text-red-500 bg-red-600/20 px-1.5 py-0.5 rounded border border-red-500/30">
-              {quality}
-            </span>
-          </div>
+          {/* Click Overlay (Play / Pause & Double-Click Fullscreen) */}
+          <div
+            onClick={togglePlay}
+            onDoubleClick={toggleFullscreen}
+            className="absolute inset-0 z-10 cursor-pointer"
+          />
 
-          {/* Corner Watermark Mask ensuring PlayTube branding */}
-          <div className="absolute bottom-2.5 right-12 z-20 pointer-events-none hidden md:flex items-center gap-1.5 px-2 py-0.5 rounded bg-black/85 backdrop-blur-md border border-neutral-700/60 text-white shadow text-[10px] font-bold opacity-0 group-hover/player:opacity-90 transition-opacity duration-300">
-            <span className="text-red-500">Play</span>Tube Pro
-          </div>
-        </div>
-
-        {/* Modern Player Action Bar (Ambient Toggle, Theater, Speed, Quality) */}
-        <div className="bg-[#121212]/95 backdrop-blur-md px-3 sm:px-4 py-2.5 flex items-center justify-between border-t border-neutral-800 text-xs text-neutral-300">
-          <div className="flex items-center gap-2">
-            <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-red-600/20 text-red-400 font-semibold text-[11px] border border-red-500/30">
-              <Sparkles className="w-3.5 h-3.5" /> Ad-Free High Fidelity
-            </span>
-            <span className="hidden sm:inline text-neutral-500">•</span>
-            <span className="hidden sm:inline text-emerald-400 font-mono text-[11px] font-semibold">{quality}</span>
-          </div>
-
-          <div className="flex items-center gap-2 relative">
-            {/* Resolution Selector */}
-            <div className="relative">
-              <button
-                onClick={() => {
-                  setShowQualityMenu(!showQualityMenu);
-                  setShowSpeedMenu(false);
-                }}
-                className="px-2.5 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-200 flex items-center gap-1 transition text-[11px] font-medium border border-neutral-700"
-                title="Video Quality"
-              >
-                <span>{quality.split(' ')[0]}</span>
-              </button>
-
-              {showQualityMenu && (
-                <div className="absolute right-0 bottom-9 w-36 bg-[#282828] border border-neutral-700 rounded-xl shadow-xl py-1 z-30 animate-in fade-in zoom-in-95 backdrop-blur-md">
-                  <div className="px-3 py-1 text-[10px] uppercase font-bold text-neutral-400">Resolution</div>
-                  {qualities.map((q) => (
-                    <button
-                      key={q}
-                      onClick={() => {
-                        setQuality(q);
-                        setShowQualityMenu(false);
-                      }}
-                      className={`w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-700 transition ${
-                        quality === q ? 'text-red-500 font-bold' : 'text-neutral-300'
-                      }`}
-                    >
-                      {q}
-                    </button>
-                  ))}
-                </div>
-              )}
+          {/* Center Play/Pause Ripple Indicator */}
+          {centerRipple && (
+            <div className="absolute inset-0 z-20 pointer-events-none flex items-center justify-center">
+              <div className="w-16 h-16 rounded-full bg-black/70 backdrop-blur-md text-white flex items-center justify-center animate-ping duration-300">
+                {centerRipple === 'play' ? (
+                  <Play className="w-8 h-8 ml-1 fill-white" />
+                ) : (
+                  <Pause className="w-8 h-8 fill-white" />
+                )}
+              </div>
             </div>
-            {/* Ambient Lighting Toggle */}
-            <button
-              onClick={() => setAmbientLighting(!ambientLighting)}
-              className={`p-1.5 rounded-lg transition flex items-center gap-1 text-[11px] ${
-                ambientLighting ? 'bg-red-600/20 text-red-400 border border-red-500/30' : 'bg-neutral-800 text-neutral-400 hover:text-white'
-              }`}
-              title="Toggle Ambient Mode Glow"
+          )}
+
+          {/* Custom Sleek Bottom Controls Bar (Zero YouTube Logo, Pixel-Perfect YouTube Style) */}
+          <div
+            className={`absolute inset-x-0 bottom-0 z-30 pt-16 pb-3 px-3 sm:px-5 bg-gradient-to-t from-black/95 via-black/60 to-transparent transition-opacity duration-300 pointer-events-auto ${
+              showControls || !isPlaying || showSettingsMenu
+                ? 'opacity-100'
+                : 'opacity-0 pointer-events-none'
+            }`}
+          >
+            {/* Interactive Red YouTube Seekbar */}
+            <div
+              ref={seekbarRef}
+              onClick={handleSeekbarClick}
+              onMouseMove={handleSeekbarMouseMove}
+              onMouseLeave={() => setHoverSeekTime(null)}
+              className="w-full h-1.5 hover:h-2.5 bg-white/20 hover:bg-white/30 rounded-full cursor-pointer relative mb-3 transition-all group/seek"
             >
-              <Lightbulb className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">{ambientLighting ? 'Ambient On' : 'Ambient Off'}</span>
-            </button>
+              {/* Hover Position Preview Line */}
+              {hoverSeekTime !== null && (
+                <div
+                  className="absolute top-0 bottom-0 bg-white/40 rounded-full pointer-events-none"
+                  style={{ width: `${hoverSeekPos}%` }}
+                />
+              )}
 
-            {/* Speed Selector */}
-            <div className="relative">
-              <button
-                onClick={() => setShowSpeedMenu(!showSpeedMenu)}
-                className="px-2.5 py-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-200 flex items-center gap-1 transition text-[11px] font-medium"
-                title="Playback Speed"
+              {/* Red Played Progress */}
+              <div
+                className="h-full bg-red-600 rounded-full relative pointer-events-none transition-all duration-75"
+                style={{ width: `${progressPercent}%` }}
               >
-                <Settings2 className="w-3.5 h-3.5" />
-                <span>{playbackSpeed}x</span>
-              </button>
+                {/* Drag Scrubber Thumb */}
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-red-600 rounded-full shadow-md scale-0 group-hover/seek:scale-100 transition-transform" />
+              </div>
 
-              {showSpeedMenu && (
-                <div className="absolute right-0 bottom-9 w-28 bg-[#282828] border border-neutral-700 rounded-xl shadow-xl py-1 z-30 animate-in fade-in zoom-in-95 backdrop-blur-md">
-                  <div className="px-3 py-1 text-[10px] uppercase font-bold text-neutral-400">Speed</div>
-                  {speeds.map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => {
-                        setPlaybackSpeed(s);
-                        setShowSpeedMenu(false);
-                      }}
-                      className={`w-full px-3 py-1.5 text-left text-xs hover:bg-neutral-700 transition ${
-                        playbackSpeed === s ? 'text-red-500 font-bold' : 'text-neutral-300'
-                      }`}
-                    >
-                      {s === '1' ? 'Normal (1x)' : `${s}x`}
-                    </button>
-                  ))}
+              {/* Hover Time Tooltip */}
+              {hoverSeekTime !== null && (
+                <div
+                  className="absolute -top-7 px-2 py-0.5 rounded bg-neutral-900/90 text-white text-[11px] font-mono border border-neutral-700 pointer-events-none transform -translate-x-1/2 shadow-lg"
+                  style={{ left: `${hoverSeekPos}%` }}
+                >
+                  {formatTime(hoverSeekTime)}
                 </div>
               )}
             </div>
 
-            {/* Theater Mode Toggle */}
-            <button
-              onClick={onToggleTheater}
-              className="p-1.5 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-200 transition hidden md:flex items-center gap-1 text-[11px] font-medium"
-              title={isTheater ? 'Exit theater mode' : 'Theater mode (T)'}
-            >
-              <Tv className="w-3.5 h-3.5" />
-              <span>{isTheater ? 'Default' : 'Theater'}</span>
-            </button>
+            {/* Bottom Controls Row */}
+            <div className="flex items-center justify-between text-white text-xs">
+              {/* Left Group: Play/Pause, Replay 10s, Volume, Time */}
+              <div className="flex items-center gap-2 sm:gap-4">
+                <button
+                  onClick={togglePlay}
+                  className="p-1.5 hover:text-red-500 transition active:scale-90"
+                  title={isPlaying ? 'Pause (k)' : 'Play (k)'}
+                >
+                  {isPlaying ? (
+                    <Pause className="w-5 h-5 fill-current" />
+                  ) : (
+                    <Play className="w-5 h-5 fill-current ml-0.5" />
+                  )}
+                </button>
+
+                <button
+                  onClick={() => seek(currentTime - 10)}
+                  className="p-1.5 text-neutral-300 hover:text-white transition active:scale-90 hidden sm:block"
+                  title="Rewind 10s (Left Arrow)"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </button>
+
+                <button
+                  onClick={() => seek(currentTime + 10)}
+                  className="p-1.5 text-neutral-300 hover:text-white transition active:scale-90 hidden sm:block"
+                  title="Forward 10s (Right Arrow)"
+                >
+                  <RotateCw className="w-4 h-4" />
+                </button>
+
+                {/* Volume Slider */}
+                <div className="flex items-center gap-1 group/vol">
+                  <button
+                    onClick={toggleMute}
+                    className="p-1.5 hover:text-red-400 transition"
+                    title={isMuted ? 'Unmute (m)' : 'Mute (m)'}
+                  >
+                    {isMuted || volume === 0 ? (
+                      <VolumeX className="w-5 h-5 text-red-500" />
+                    ) : volume < 50 ? (
+                      <Volume1 className="w-5 h-5" />
+                    ) : (
+                      <Volume2 className="w-5 h-5" />
+                    )}
+                  </button>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={isMuted ? 0 : volume}
+                    onChange={(e) => handleVolumeChange(parseInt(e.target.value, 10))}
+                    className="w-0 group-hover/vol:w-16 sm:group-hover/vol:w-20 transition-all duration-200 accent-red-600 cursor-pointer h-1 rounded-lg"
+                  />
+                </div>
+
+                {/* Time Display */}
+                <div className="text-[12px] font-mono text-neutral-300">
+                  <span>{formatTime(currentTime)}</span>
+                  <span className="text-neutral-500 mx-1.5">/</span>
+                  <span className="text-neutral-400">{formatTime(duration)}</span>
+                </div>
+              </div>
+
+              {/* Right Group: Settings, Ambient, Theater, Fullscreen */}
+              <div className="flex items-center gap-1.5 sm:gap-2.5 relative">
+                {/* Settings Menu (Speed & Quality) */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowSettingsMenu(!showSettingsMenu)}
+                    className="p-1.5 text-neutral-300 hover:text-white transition hover:rotate-45"
+                    title="Playback Settings"
+                  >
+                    <Settings className="w-5 h-5" />
+                  </button>
+
+                  {showSettingsMenu && (
+                    <div className="absolute right-0 bottom-10 w-48 bg-[#1f1f1f]/95 backdrop-blur-md border border-neutral-700/80 rounded-2xl shadow-2xl py-2 z-40 text-xs animate-in fade-in zoom-in-95">
+                      {/* Speed Section */}
+                      <div className="px-3.5 py-1 text-[10px] font-bold uppercase tracking-wider text-neutral-400 border-b border-neutral-800">
+                        Playback Speed
+                      </div>
+                      <div className="py-1">
+                        {speeds.map((s) => (
+                          <button
+                            key={s}
+                            onClick={() => setSpeed(s)}
+                            className={`w-full px-3.5 py-1.5 text-left flex items-center justify-between hover:bg-neutral-800 transition ${
+                              playbackSpeed === s ? 'text-red-500 font-bold' : 'text-neutral-300'
+                            }`}
+                          >
+                            <span>{s === '1' ? 'Normal (1x)' : `${s}x`}</span>
+                            {playbackSpeed === s && <Check className="w-3.5 h-3.5" />}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Quality Section */}
+                      <div className="px-3.5 py-1 text-[10px] font-bold uppercase tracking-wider text-neutral-400 border-t border-b border-neutral-800 mt-1">
+                        Resolution
+                      </div>
+                      <div className="py-1">
+                        {qualities.map((q) => (
+                          <button
+                            key={q}
+                            onClick={() => handleQualitySelect(q)}
+                            className={`w-full px-3.5 py-1.5 text-left flex items-center justify-between hover:bg-neutral-800 transition ${
+                              quality === q ? 'text-red-500 font-bold' : 'text-neutral-300'
+                            }`}
+                          >
+                            <span>{q}</span>
+                            {quality === q && <Check className="w-3.5 h-3.5" />}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Ambient Mode Toggle */}
+                {!isFullscreen && (
+                  <button
+                    onClick={() => setAmbientLighting(!ambientLighting)}
+                    className={`p-1.5 transition rounded-lg ${
+                      ambientLighting ? 'text-red-500' : 'text-neutral-400 hover:text-white'
+                    }`}
+                    title={ambientLighting ? 'Ambient Mode On' : 'Ambient Mode Off'}
+                  >
+                    <Lightbulb className="w-4 h-4" />
+                  </button>
+                )}
+
+                {/* Theater Mode Toggle */}
+                {!isFullscreen && (
+                  <button
+                    onClick={onToggleTheater}
+                    className="p-1.5 text-neutral-300 hover:text-white transition hidden md:block"
+                    title={isTheater ? 'Default view (t)' : 'Theater mode (t)'}
+                  >
+                    <Tv className="w-4 h-4" />
+                  </button>
+                )}
+
+                {/* Fullscreen Toggle */}
+                <button
+                  onClick={toggleFullscreen}
+                  className="p-1.5 text-neutral-300 hover:text-white transition active:scale-90"
+                  title={isFullscreen ? 'Exit full screen (f)' : 'Full screen (f)'}
+                >
+                  {isFullscreen ? (
+                    <Minimize className="w-5 h-5" />
+                  ) : (
+                    <Maximize className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>

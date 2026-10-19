@@ -243,7 +243,12 @@ export default function WatchPage() {
 
           {/* Right Column / Related Recommendations */}
           <div className="w-full lg:w-96 xl:w-[420px] shrink-0 mt-6 lg:mt-0">
-            <RelatedVideos currentVideoId={video.id} currentCategory={video.category} />
+            <RelatedVideos
+              currentVideoId={video.id}
+              currentCategory={video.category}
+              videoTitle={video.title}
+              channelName={video.channel}
+            />
           </div>
         </div>
       </div>
