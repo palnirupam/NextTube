@@ -1,32 +1,73 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useApp } from '../context/AppContext';
-import { CURATED_VIDEOS, CURATED_SHORTS, searchVideos } from '../services/api';
+import { getHomeFeed, CURATED_VIDEOS, CURATED_SHORTS } from '../services/api';
 import CategoryChips from '../components/common/CategoryChips';
 import VideoCard from '../components/common/VideoCard';
-import { Film, ChevronRight } from 'lucide-react';
+import { Film, ChevronRight, Sparkles, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function HomePage() {
   const { activeCategory, setActiveCategory } = useApp();
   const [videos, setVideos] = useState(CURATED_VIDEOS);
-  const [loading, setLoading] = useState(false);
+  const [shorts, setShorts] = useState(CURATED_SHORTS);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const navigate = useNavigate();
+  const observerTarget = useRef(null);
 
+  // Load Initial Feed when category changes
   useEffect(() => {
+    let active = true;
     setLoading(true);
-    if (activeCategory === 'All') {
-      setVideos(CURATED_VIDEOS);
-      setLoading(false);
-    } else {
-      searchVideos(activeCategory).then((results) => {
-        setVideos(results);
+    setPage(1);
+    setHasMore(true);
+
+    getHomeFeed(activeCategory, 1).then((res) => {
+      if (active) {
+        setVideos(res.videos || CURATED_VIDEOS);
+        if (res.shorts && res.shorts.length > 0) {
+          setShorts(res.shorts);
+        }
         setLoading(false);
-      });
-    }
+      }
+    });
+
+    return () => {
+      active = false;
+    };
   }, [activeCategory]);
 
+  // Load More Videos for Continuous Streaming (List by List)
+  const loadMoreVideos = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    const nextPage = page + 1;
+
+    try {
+      const res = await getHomeFeed(activeCategory, nextPage);
+      if (res.videos && res.videos.length > 0) {
+        // Prevent duplicate IDs
+        setVideos((prev) => {
+          const existingIds = new Set(prev.map(v => v.id));
+          const newUnique = res.videos.filter(v => !existingIds.has(v.id));
+          return [...prev, ...newUnique];
+        });
+        setPage(nextPage);
+        if (nextPage >= 5) setHasMore(false); // Cap after 5 continuous batches
+      } else {
+        setHasMore(false);
+      }
+    } catch (e) {
+      console.warn('Infinite scroll load notice:', e);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [loadingMore, hasMore, page, activeCategory]);
+
   return (
-    <div className="flex-1 min-h-screen bg-[#0f0f0f] pb-20 md:pb-10">
+    <div className="flex-1 min-h-screen bg-[#0f0f0f] pb-24 md:pb-12 text-white">
       {/* Category Chips Bar */}
       <CategoryChips
         activeCategory={activeCategory}
@@ -34,13 +75,13 @@ export default function HomePage() {
       />
 
       {/* Main Video Feed Container */}
-      <main className="max-w-[2000px] mx-auto px-3 sm:px-6 py-4">
+      <main className="max-w-[2200px] mx-auto px-3 sm:px-6 py-4">
         {loading ? (
           /* Skeletons */
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-y-8 gap-x-4">
-            {[...Array(8)].map((_, i) => (
+            {[...Array(10)].map((_, i) => (
               <div key={i} className="animate-pulse space-y-3">
-                <div className="aspect-video bg-neutral-800 rounded-2xl w-full"></div>
+                <div className="aspect-video bg-neutral-850 rounded-2xl w-full"></div>
                 <div className="flex gap-3">
                   <div className="w-9 h-9 rounded-full bg-neutral-800 shrink-0"></div>
                   <div className="flex-1 space-y-2">
@@ -67,7 +108,12 @@ export default function HomePage() {
                   <div className="p-1.5 rounded-lg bg-red-600/20 text-red-500">
                     <Film className="w-5 h-5" />
                   </div>
-                  <h3 className="text-lg font-bold text-neutral-100">PlayTube Shorts</h3>
+                  <h3 className="text-lg font-bold text-neutral-100 flex items-center gap-2">
+                    <span>PlayTube Shorts</span>
+                    <span className="text-[10px] font-semibold text-red-400 bg-red-600/10 px-2 py-0.5 rounded-full border border-red-500/20">
+                      Trending
+                    </span>
+                  </h3>
                 </div>
                 <button
                   onClick={() => navigate('/shorts')}
@@ -77,24 +123,28 @@ export default function HomePage() {
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3.5">
-                {CURATED_SHORTS.map((s) => (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5">
+                {shorts.slice(0, 6).map((s) => (
                   <div
                     key={s.id}
                     onClick={() => navigate('/shorts')}
-                    className="group cursor-pointer flex flex-col relative aspect-[9/16] rounded-2xl overflow-hidden bg-neutral-900 border border-neutral-800/80 shadow hover:shadow-red-500/10 transition"
+                    className="group cursor-pointer flex flex-col relative aspect-[9/16] rounded-2xl overflow-hidden bg-neutral-900 border border-neutral-800 shadow hover:shadow-red-500/15 transition-all duration-300 hover:-translate-y-1"
                   >
                     <img
-                      src={`https://i.ytimg.com/vi/${s.id}/hqdefault.jpg`}
+                      src={s.thumbnail || `https://i.ytimg.com/vi/${s.id}/hqdefault.jpg`}
                       alt={s.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition duration-300"
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                      onError={(e) => {
+                        e.target.src = `https://i.ytimg.com/vi/${s.id}/hqdefault.jpg`;
+                      }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent p-3 flex flex-col justify-end">
                       <p className="text-xs font-semibold text-white line-clamp-2 leading-snug">
                         {s.title}
                       </p>
                       <span className="text-[11px] text-neutral-400 mt-1 font-medium">
-                        {s.likes} likes
+                        {s.likes || 'Trending'}
                       </span>
                     </div>
                   </div>
@@ -102,14 +152,48 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Remaining Videos Grid */}
+            {/* Continuous Video Feed (Remaining Videos List by List) */}
             {videos.length > 8 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-y-7 gap-x-4 mt-6">
-                {videos.slice(8).map((video) => (
-                  <VideoCard key={video.id} video={video} />
-                ))}
+              <div>
+                <div className="flex items-center justify-between mb-4 mt-6">
+                  <h3 className="text-base font-bold text-neutral-300 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-red-500" />
+                    <span>Recommended For You ({videos.length} videos)</span>
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-y-7 gap-x-4">
+                  {videos.slice(8).map((video) => (
+                    <VideoCard key={video.id} video={video} />
+                  ))}
+                </div>
               </div>
             )}
+
+            {/* Load More Continuous Stream Button & Trigger */}
+            <div ref={observerTarget} className="mt-12 flex flex-col items-center justify-center pb-8">
+              {hasMore ? (
+                <button
+                  onClick={loadMoreVideos}
+                  disabled={loadingMore}
+                  className="px-8 py-3 rounded-full bg-neutral-850 hover:bg-neutral-800 text-neutral-200 hover:text-white font-bold text-sm border border-neutral-700/80 transition shadow-lg flex items-center gap-2 active:scale-95"
+                >
+                  {loadingMore ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+                      <span>Streaming More Videos...</span>
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="w-4 h-4 text-red-500" />
+                      <span>Load More Videos (Next Stream)</span>
+                    </>
+                  )}
+                </button>
+              ) : (
+                <p className="text-xs text-neutral-500">You've reached the end of this category stream.</p>
+              )}
+            </div>
           </>
         )}
       </main>

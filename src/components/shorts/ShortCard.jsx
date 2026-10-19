@@ -38,18 +38,40 @@ export default function ShortCard({ short, isActive }) {
     if (!disliked) setLiked(false);
   };
 
-  // Safe embed for YouTube Shorts
-  const embedUrl = `https://www.youtube-nocookie.com/embed/${short.id}?autoplay=${isActive ? 1 : 0}&loop=1&playlist=${short.id}&controls=0&modestbranding=1&rel=0&playsinline=1`;
+  // Safe embed for YouTube Shorts with scale cropping to remove YouTube logos
+  const [isMuted, setIsMuted] = useState(false);
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173';
+  const embedUrl = `https://www.youtube-nocookie.com/embed/${short.id}?autoplay=${isActive ? 1 : 0}&loop=1&playlist=${short.id}&controls=0&modestbranding=1&rel=0&playsinline=1&mute=${isMuted ? 1 : 0}&iv_load_policy=3&origin=${encodeURIComponent(origin)}`;
 
   return (
-    <div className="relative w-full max-w-[380px] h-[calc(100vh-8rem)] max-h-[720px] mx-auto rounded-2xl overflow-hidden bg-black shadow-2xl flex items-center justify-center snap-center">
-      {/* Video Iframe Embed */}
-      <iframe
-        src={embedUrl}
-        title={short.title}
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        className="w-full h-full object-cover border-0"
-      />
+    <div className="relative w-full max-w-[390px] h-[calc(100vh-6rem)] max-h-[760px] mx-auto rounded-3xl overflow-hidden bg-black shadow-2xl flex items-center justify-center border border-neutral-800/80 group">
+      {/* Video Container with Over-Scaling to completely eliminate YouTube watermark */}
+      <div className="absolute inset-0 overflow-hidden flex items-center justify-center">
+        <iframe
+          src={embedUrl}
+          title={short.title}
+          referrerPolicy="origin"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          className="w-[114%] h-[114%] -ml-[7%] -mt-[7%] object-cover border-0 pointer-events-auto"
+        />
+      </div>
+
+      {/* Top Floating Branding & Sound Control */}
+      <div className="absolute top-4 inset-x-4 z-20 flex items-center justify-between pointer-events-auto">
+        <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-white shadow-lg">
+          <div className="w-2 h-2 rounded-full bg-red-600 animate-ping"></div>
+          <span className="text-[11px] font-black tracking-wider uppercase text-neutral-100">PlayTube</span>
+          <span className="text-[10px] font-bold text-red-500">Shorts</span>
+        </div>
+
+        <button
+          onClick={() => setIsMuted(!isMuted)}
+          className="p-2.5 rounded-full bg-black/60 hover:bg-black/80 backdrop-blur-md text-white border border-white/10 transition shadow-lg"
+          title={isMuted ? 'Unmute' : 'Mute'}
+        >
+          {isMuted ? <VolumeX className="w-4 h-4 text-red-400" /> : <Volume2 className="w-4 h-4 text-white" />}
+        </button>
+      </div>
 
       {/* Floating Left Bottom Meta Overlay */}
       <div className="absolute bottom-4 left-3 right-16 z-20 pointer-events-auto text-white">

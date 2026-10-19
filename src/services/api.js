@@ -279,14 +279,99 @@ function parseVideoRenderer(v) {
 }
 
 /**
+ * Parse a modern YouTube lockupViewModel from InnerTube
+ */
+function parseLockup(lvm, defaultChannel = 'Creator') {
+  const videoId = lvm.contentId;
+  const meta = lvm.metadata?.lockupMetadataViewModel;
+  const title = meta?.title?.content || 'YouTube Stream';
+  const rows = meta?.metadata?.contentMetadataViewModel?.metadataRows || [];
+
+  let channel = defaultChannel;
+  let views = '100K views';
+  let timestamp = 'Recently';
+
+  if (rows.length === 1) {
+    const parts = rows[0]?.metadataParts || [];
+    if (parts[0]?.text?.content) views = parts[0].text.content;
+    if (parts[1]?.text?.content) timestamp = parts[1].text.content;
+  } else if (rows.length >= 2) {
+    const p0 = rows[0]?.metadataParts?.[0]?.text?.content;
+    const p1 = rows[1]?.metadataParts?.[0]?.text?.content;
+    const p2 = rows[1]?.metadataParts?.[1]?.text?.content;
+
+    if (p0 && !p0.includes('view') && !p0.includes('ago')) {
+      channel = p0;
+      if (p1) views = p1;
+      if (p2) timestamp = p2;
+    } else {
+      if (p0) views = p0;
+      if (p1) timestamp = p1;
+    }
+  }
+
+  let duration = '3:45';
+  const overlays = lvm.contentImage?.thumbnailViewModel?.overlays || [];
+  for (const o of overlays) {
+    const badgeText = o.thumbnailBottomOverlayViewModel?.badges?.[0]?.thumbnailBadgeViewModel?.text;
+    if (badgeText) duration = badgeText;
+  }
+
+  const thumbs = lvm.contentImage?.thumbnailViewModel?.image?.sources || [];
+  const thumbnail = cleanMediaUrl(thumbs[thumbs.length - 1]?.url) || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+
+  return {
+    id: videoId,
+    title,
+    channel,
+    channelId: `UC_${channel.replace(/\s+/g, '')}`,
+    channelAvatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(channel)}`,
+    subscribers: 'Official Creator',
+    thumbnail,
+    duration,
+    views,
+    timestamp,
+    category: 'Music',
+    description: `Watch ${title} by ${channel} ad-free on PlayTube in full HD 1080p.`,
+    likes: '120K',
+    dislikes: '950'
+  };
+}
+
+/**
+ * Parse a shortsLockupViewModel into PlayTube Short Object
+ */
+function parseShortsLockup(s) {
+  const videoId = s.onTap?.innertubeCommand?.reelWatchEndpoint?.videoId ||
+                  s.entityId?.replace('shorts-shelf-item-', '') ||
+                  '';
+  const title = s.overlayMetadata?.primaryText?.content || 'Viral Short';
+  const views = s.overlayMetadata?.secondaryText?.content || '500K views';
+  const thumbnail = `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`;
+
+  return {
+    id: videoId,
+    title,
+    channel: 'Shorts Creator',
+    channelAvatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(videoId)}`,
+    likes: views,
+    commentsCount: '1.5K',
+    musicTitle: 'Original Sound',
+    description: title,
+    thumbnail
+  };
+}
+
+/**
  * Deep REA YouTube Search
- * Extracts both Creators/Channels (big & small) AND Videos/Shorts
+ * Extracts Creators/Channels (big & small), Videos, and Shorts
  */
 export async function searchVideos(query) {
   if (!query || !query.trim()) {
     const defaultList = [...CURATED_VIDEOS];
     defaultList.channels = [];
     defaultList.videos = CURATED_VIDEOS;
+    defaultList.shorts = CURATED_SHORTS;
     return defaultList;
   }
 
@@ -299,6 +384,7 @@ export async function searchVideos(query) {
     const list = [details, ...CURATED_VIDEOS];
     list.channels = [];
     list.videos = list;
+    list.shorts = CURATED_SHORTS;
     return list;
   }
 
@@ -316,11 +402,11 @@ export async function searchVideos(query) {
     };
 
     const data = await postYouTubeAPI('/youtubei/v1/search', payload);
-
     const contents = data.contents?.twoColumnSearchResultsRenderer?.primaryContents?.sectionListRenderer?.contents || [];
     
     const extractedChannels = [];
     const extractedVideos = [];
+    const extractedShorts = [];
 
     for (const c of contents) {
       const items = c.itemSectionRenderer?.contents || [];
@@ -355,7 +441,23 @@ export async function searchVideos(query) {
           extractedVideos.push(parseVideoRenderer(item.videoRenderer));
         }
 
-        // 3. Shelves (Horizontal or Vertical playlists/channel video lists)
+        // 3. Modern Lockup View Model inside search
+        if (item.lockupViewModel && item.lockupViewModel.contentId) {
+          extractedVideos.push(parseLockup(item.lockupViewModel));
+        }
+
+        // 4. Shorts Shelves (gridShelfViewModel)
+        if (item.gridShelfViewModel) {
+          const shelfContents = item.gridShelfViewModel.contents || [];
+          for (const sc of shelfContents) {
+            if (sc.shortsLockupViewModel) {
+              const short = parseShortsLockup(sc.shortsLockupViewModel);
+              if (short.id) extractedShorts.push(short);
+            }
+          }
+        }
+
+        // 5. Classic Shelves
         if (item.shelfRenderer) {
           const shelfItems = item.shelfRenderer.content?.verticalListRenderer?.items ||
                              item.shelfRenderer.content?.horizontalListRenderer?.items || [];
@@ -372,6 +474,7 @@ export async function searchVideos(query) {
       const unified = [...extractedChannels, ...extractedVideos];
       unified.channels = extractedChannels;
       unified.videos = extractedVideos;
+      unified.shorts = extractedShorts;
       return unified;
     }
   } catch (err) {
@@ -388,32 +491,155 @@ export async function searchVideos(query) {
   const fallbackResult = matched.length > 0 ? matched : CURATED_VIDEOS;
   fallbackResult.channels = [];
   fallbackResult.videos = fallbackResult;
+  fallbackResult.shorts = CURATED_SHORTS;
   return fallbackResult;
 }
 
 /**
- * Fetch Channel Profile & Videos by Channel ID or Creator Name
+ * Fetch Channel Profile, Videos & Shorts by Channel ID or Creator Name
+ * Deep REA using /youtubei/v1/browse with exact protobuf tokens
  */
 export async function getChannelProfile(channelId, channelName) {
-  const query = channelName || channelId;
-  try {
-    const results = await searchVideos(query);
-    const channel = results.channels?.find(c => c.id === channelId || c.title.toLowerCase() === channelName?.toLowerCase()) ||
-                    results.channels?.[0] || {
-                      id: channelId || 'UC_unknown',
-                      title: channelName || 'YouTube Creator',
-                      handle: channelName ? `@${channelName.replace(/\s+/g, '').toLowerCase()}` : '@creator',
-                      subscribers: 'Official Creator',
-                      videoCount: `${results.videos?.length || 12} videos`,
-                      avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(channelName || channelId)}`,
-                      description: 'Welcome to the official creator channel on PlayTube. Stream ad-free high fidelity videos.'
-                    };
+  let ucId = channelId?.startsWith('UC') ? channelId : null;
+  let chanMeta = null;
+  let searchBackupVideos = [];
 
-    const videos = results.videos || results.filter(v => !v.isChannel);
+  try {
+    // Step 1: Query YouTube InnerTube search to find channel metadata if needed
+    const query = channelName || channelId;
+    const searchRes = await searchVideos(query);
+    searchBackupVideos = searchRes.videos || [];
+
+    if (searchRes.channels && searchRes.channels.length > 0) {
+      const matched = searchRes.channels.find(c => c.id === channelId || c.title?.toLowerCase() === channelName?.toLowerCase()) || searchRes.channels[0];
+      if (matched) {
+        if (!ucId && matched.id?.startsWith('UC')) ucId = matched.id;
+        chanMeta = { ...matched };
+      }
+    }
+
+    // Step 2: If we have a UC ID, browse the channel's official Videos tab
+    let videos = [];
+    let shorts = [];
+
+    if (ucId) {
+      // 2a. Fetch Videos tab (params: "EgZ2aWRlb3PyBgQKAjoA")
+      try {
+        const vData = await postYouTubeAPI('/youtubei/v1/browse', {
+          context: { client: { clientName: 'WEB', clientVersion: '2.20240101.01.00', hl: 'en', gl: 'US' } },
+          browseId: ucId,
+          params: 'EgZ2aWRlb3PyBgQKAjoA'
+        });
+
+        // Extract channel metadata from header if not yet populated
+        if (!chanMeta) {
+          const phr = vData.header?.pageHeaderRenderer?.content?.pageHeaderViewModel;
+          const c4 = vData.header?.c4TabbedHeaderRenderer;
+          if (phr) {
+            const title = phr.title?.dynamicTextViewModel?.text?.content || channelName || 'Creator';
+            const avatar = cleanMediaUrl(phr.image?.decoratedAvatarViewModel?.avatar?.avatarViewModel?.image?.sources?.[0]?.url);
+            const mRows = phr.metadata?.contentMetadataViewModel?.metadataRows || [];
+            const handle = mRows[0]?.metadataParts?.[0]?.text?.content || `@${title.replace(/\s+/g, '').toLowerCase()}`;
+            const subs = mRows[1]?.metadataParts?.[0]?.text?.content || 'Official Creator';
+            const vCount = mRows[1]?.metadataParts?.[1]?.text?.content || 'Uploaded Videos';
+
+            chanMeta = {
+              id: ucId,
+              title,
+              handle,
+              subscribers: subs,
+              videoCount: vCount,
+              avatar: avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(title)}`,
+              description: `Welcome to the official creator channel for ${title} on PlayTube.`
+            };
+          } else if (c4) {
+            chanMeta = {
+              id: ucId,
+              title: c4.title || channelName || 'Creator',
+              handle: `@${(c4.title || 'creator').replace(/\s+/g, '').toLowerCase()}`,
+              subscribers: c4.subscriberCountText?.simpleText || 'Official Creator',
+              videoCount: 'Uploaded Videos',
+              avatar: cleanMediaUrl(c4.avatar?.thumbnails?.[0]?.url) || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(c4.title || 'creator')}`,
+              description: c4.descriptionSnippet?.runs?.map(r => r.text).join('') || 'Official YouTube Channel'
+            };
+          }
+        }
+
+        // Parse Videos grid
+        const tabs = vData.contents?.twoColumnBrowseResultsRenderer?.tabs || [];
+        const vTab = tabs.find(t => t.tabRenderer?.selected) || tabs[1] || tabs[0];
+        const grid = vTab?.tabRenderer?.content?.richGridRenderer?.contents ||
+                     vTab?.tabRenderer?.content?.sectionListRenderer?.contents?.[0]?.itemSectionRenderer?.contents || [];
+
+        for (const item of grid) {
+          // Modern lockupViewModel
+          if (item.richItemRenderer?.content?.lockupViewModel) {
+            videos.push(parseLockup(item.richItemRenderer.content.lockupViewModel, chanMeta?.title || channelName));
+          }
+          // Classic videoRenderer
+          else if (item.richItemRenderer?.content?.videoRenderer) {
+            videos.push(parseVideoRenderer(item.richItemRenderer.content.videoRenderer));
+          } else if (item.videoRenderer) {
+            videos.push(parseVideoRenderer(item.videoRenderer));
+          }
+        }
+      } catch (err) {
+        console.warn('Browse videos tab fetch notice:', err);
+      }
+
+      // 2b. Fetch Shorts tab (params: "EgZzaG9ydHPyBgQKAjoA")
+      try {
+        const sData = await postYouTubeAPI('/youtubei/v1/browse', {
+          context: { client: { clientName: 'WEB', clientVersion: '2.20240101.01.00', hl: 'en', gl: 'US' } },
+          browseId: ucId,
+          params: 'EgZzaG9ydHPyBgQKAjoA'
+        });
+        const tabs = sData.contents?.twoColumnBrowseResultsRenderer?.tabs || [];
+        const sTab = tabs.find(t => t.tabRenderer?.selected);
+        const sGrid = sTab?.tabRenderer?.content?.richGridRenderer?.contents || [];
+        for (const item of sGrid) {
+          const lvm = item.richItemRenderer?.content?.lockupViewModel;
+          if (lvm && lvm.contentId) {
+            shorts.push({
+              id: lvm.contentId,
+              title: lvm.metadata?.lockupMetadataViewModel?.title?.content || 'Short',
+              channel: chanMeta?.title || channelName || 'Creator',
+              channelAvatar: chanMeta?.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(chanMeta?.title || 'creator')}`,
+              likes: '25K',
+              commentsCount: '340',
+              musicTitle: 'Original Audio',
+              thumbnail: `https://i.ytimg.com/vi/${lvm.contentId}/hqdefault.jpg`
+            });
+          }
+        }
+      } catch (err) {
+        console.warn('Browse shorts tab notice:', err);
+      }
+    }
+
+    // Merge with searchBackupVideos if browse yielded few
+    if (videos.length === 0 && searchBackupVideos.length > 0) {
+      videos = searchBackupVideos;
+    }
+
+    // Ensure fallback channel metadata if not set
+    if (!chanMeta) {
+      const name = channelName || (channelId?.startsWith('UC') ? 'YouTube Creator' : channelId);
+      chanMeta = {
+        id: ucId || channelId || 'UC_creator',
+        title: name,
+        handle: `@${name.replace(/\s+/g, '').toLowerCase()}`,
+        subscribers: 'Official Creator',
+        videoCount: `${videos.length} videos`,
+        avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(name)}`,
+        description: `Watch official uploads, videos, and music by ${name} on PlayTube.`
+      };
+    }
 
     return {
-      channel,
-      videos
+      channel: chanMeta,
+      videos: videos.length > 0 ? videos : CURATED_VIDEOS,
+      shorts: shorts.length > 0 ? shorts : CURATED_SHORTS
     };
   } catch (e) {
     console.error('getChannelProfile error:', e);
@@ -422,14 +648,98 @@ export async function getChannelProfile(channelId, channelName) {
         id: channelId || 'UC_creator',
         title: channelName || 'YouTube Creator',
         handle: '@creator',
-        subscribers: '1.2K subscribers',
-        videoCount: '15 videos',
+        subscribers: '10K subscribers',
+        videoCount: '24 videos',
         avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(channelName || 'creator')}`,
         description: 'Official YouTube channel profile.'
       },
-      videos: CURATED_VIDEOS
+      videos: searchBackupVideos.length > 0 ? searchBackupVideos : CURATED_VIDEOS,
+      shorts: CURATED_SHORTS
     };
   }
+}
+
+/**
+ * Live Home Feed Engine
+ * Delivers continuous list-by-list video streaming like real YouTube
+ */
+export async function getHomeFeed(category = 'All', page = 1) {
+  let query = 'Trending music and videos';
+
+  if (category === 'Music') {
+    query = page === 1 ? 'Top Indian & Global Music 2024' : 'Arijit Singh Shreya Ghoshal Taylor Swift songs';
+  } else if (category === 'Gaming') {
+    query = page === 1 ? 'Top Trending Gaming Walkthroughs & Trailers' : 'GTA 6 Minecraft Speedrun Esports';
+  } else if (category === 'Lo-fi') {
+    query = 'Lofi hip hop beats to relax study to';
+  } else if (category === 'Live') {
+    query = 'Live stream music news gaming';
+  } else if (category === 'Coding') {
+    query = page === 1 ? 'React full stack web development tutorials' : 'Python AI coding tutorials freeCodeCamp';
+  } else if (category === 'Podcasts') {
+    query = 'Top Popular Podcasts interviews';
+  } else {
+    // 'All' - page rotation
+    const allQueries = [
+      'Trending music and videos',
+      'Global viral video hits 2024',
+      'Top entertainment and music',
+      'Popular new uploads'
+    ];
+    query = allQueries[(page - 1) % allQueries.length];
+  }
+
+  try {
+    const res = await searchVideos(query);
+    const videos = res.videos || res.filter(x => !x.isChannel);
+    const shorts = res.shorts && res.shorts.length > 0 ? res.shorts : CURATED_SHORTS;
+
+    if (videos.length > 0) {
+      return { videos, shorts };
+    }
+  } catch (err) {
+    console.warn('getHomeFeed network notice:', err);
+  }
+
+  return {
+    videos: CURATED_VIDEOS,
+    shorts: CURATED_SHORTS
+  };
+}
+
+/**
+ * Live YouTube Shorts Feed
+ * Delivers endless vertical video feed for reels/shorts
+ */
+export async function getShortsFeed(query = '#shorts trending') {
+  try {
+    const res = await searchVideos(query);
+    let shorts = res.shorts || [];
+
+    // Also convert any video items that look short or from search
+    if (shorts.length < 5 && res.videos) {
+      const converted = res.videos.map(v => ({
+        id: v.id,
+        title: v.title,
+        channel: v.channel,
+        channelAvatar: v.channelAvatar,
+        likes: v.views || '150K',
+        commentsCount: '1.2K',
+        musicTitle: `${v.channel} - Original Sound`,
+        description: v.title,
+        thumbnail: v.thumbnail
+      }));
+      shorts = [...shorts, ...converted];
+    }
+
+    if (shorts.length > 0) {
+      return shorts;
+    }
+  } catch (err) {
+    console.warn('getShortsFeed error:', err);
+  }
+
+  return CURATED_SHORTS;
 }
 
 /**

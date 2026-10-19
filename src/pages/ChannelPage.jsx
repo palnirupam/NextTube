@@ -24,6 +24,7 @@ export default function ChannelPage() {
 
   const [channelData, setChannelData] = useState(null);
   const [videos, setVideos] = useState([]);
+  const [shorts, setShorts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('videos');
   const [shareOpen, setShareOpen] = useState(false);
@@ -38,6 +39,7 @@ export default function ChannelPage() {
       if (active) {
         setChannelData(res.channel);
         setVideos(res.videos || []);
+        setShorts(res.shorts || []);
         setLoading(false);
       }
     });
@@ -185,9 +187,11 @@ export default function ChannelPage() {
 
           {activeTab === 'shorts' && (
             <div>
-              <h3 className="text-base font-bold text-neutral-200 mb-4">Creator Shorts</h3>
+              <h3 className="text-base font-bold text-neutral-200 mb-4">
+                Creator Shorts ({(shorts.length > 0 ? shorts : videos).length})
+              </h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {videos.slice(0, 5).map((v) => (
+                {(shorts.length > 0 ? shorts : videos).map((v) => (
                   <div
                     key={v.id}
                     onClick={() => navigate(`/watch?v=${v.id}`)}
@@ -201,7 +205,7 @@ export default function ChannelPage() {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent p-3 flex flex-col justify-end">
                       <p className="text-xs font-semibold text-white line-clamp-2">{v.title}</p>
-                      <span className="text-[11px] text-neutral-400 mt-1">{v.views}</span>
+                      <span className="text-[11px] text-neutral-400 mt-1">{v.views || v.likes}</span>
                     </div>
                   </div>
                 ))}
