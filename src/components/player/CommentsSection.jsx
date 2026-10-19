@@ -85,15 +85,15 @@ export default function CommentsSection({ videoId }) {
   };
 
   return (
-    <div className="mt-6 pt-6 border-t border-neutral-800">
+    <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-800">
       {/* Header & Sorting */}
       <div className="flex items-center gap-6 mb-6">
-        <h3 className="text-lg sm:text-xl font-bold text-neutral-100">
+        <h3 className="text-lg sm:text-xl font-bold text-neutral-900 dark:text-neutral-100">
           {totalCount}
         </h3>
         <button
           onClick={() => setSortBy(sortBy === 'top' ? 'newest' : 'top')}
-          className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-neutral-300 hover:text-white transition"
+          className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition"
         >
           <ArrowUpDown className="w-4 h-4" />
           <span>Sort by: {sortBy === 'top' ? 'Top comments' : 'Newest first'}</span>
@@ -112,7 +112,7 @@ export default function CommentsSection({ videoId }) {
             onChange={(e) => setNewComment(e.target.value)}
             onFocus={() => setIsFocused(true)}
             placeholder="Add a comment on PlayTube..."
-            className="w-full bg-transparent border-b border-neutral-700 focus:border-white py-1.5 text-sm text-neutral-100 placeholder-neutral-500 outline-none transition"
+            className="w-full bg-transparent border-b border-neutral-400 dark:border-neutral-700 focus:border-neutral-900 dark:focus:border-white py-1.5 text-sm text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 outline-none transition"
           />
           {isFocused && (
             <div className="flex items-center justify-end gap-3 mt-3 animate-in fade-in">
@@ -122,7 +122,7 @@ export default function CommentsSection({ videoId }) {
                   setNewComment('');
                   setIsFocused(false);
                 }}
-                className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-neutral-300 hover:bg-neutral-800 transition"
+                className="px-3.5 py-1.5 rounded-full text-xs font-semibold text-neutral-600 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-800 transition"
               >
                 Cancel
               </button>
@@ -140,12 +140,12 @@ export default function CommentsSection({ videoId }) {
 
       {/* Comments List */}
       {loading ? (
-        <div className="flex items-center justify-center py-10 gap-3 text-neutral-400 text-sm">
+        <div className="flex items-center justify-center py-10 gap-3 text-neutral-500 dark:text-neutral-400 text-sm">
           <div className="w-6 h-6 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
           <span>Loading official YouTube comments...</span>
         </div>
       ) : comments.length === 0 ? (
-        <div className="py-8 text-center text-neutral-500 text-sm">
+        <div className="py-8 text-center text-neutral-500 dark:text-neutral-500 text-sm">
           No comments yet. Be the first to start the conversation!
         </div>
       ) : (
@@ -158,19 +158,20 @@ export default function CommentsSection({ videoId }) {
                 onError={(e) => {
                   e.target.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop';
                 }}
-                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover shrink-0 ring-1 ring-neutral-700"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover shrink-0 ring-1 ring-neutral-300 dark:ring-neutral-700"
               />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold text-neutral-200 hover:text-red-400 transition cursor-pointer">
+                  <span className="text-xs font-semibold text-neutral-800 dark:text-neutral-200 hover:text-red-500 dark:hover:text-red-400 transition cursor-pointer">
                     {comment.author}
                   </span>
-                  <span className="text-[11px] text-neutral-400">
+                  <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
                     {comment.time}
                   </span>
                 </div>
 
-                <p className="text-xs sm:text-sm text-neutral-300 mt-1 leading-relaxed break-words whitespace-pre-wrap">
+                {/* Comment text - key fix: dark text in light mode */}
+                <p className="text-xs sm:text-sm text-neutral-800 dark:text-neutral-200 mt-1 leading-relaxed break-words whitespace-pre-wrap">
                   {comment.text}
                 </p>
 
@@ -179,7 +180,7 @@ export default function CommentsSection({ videoId }) {
                   <button
                     onClick={() => handleLike(comment.id)}
                     className={`flex items-center gap-1.5 text-xs transition ${
-                      comment.isLiked ? 'text-blue-500 font-bold' : 'text-neutral-400 hover:text-white'
+                      comment.isLiked ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
                     }`}
                   >
                     <ThumbsUp className="w-3.5 h-3.5" />
@@ -189,7 +190,7 @@ export default function CommentsSection({ videoId }) {
                   <button
                     onClick={() => handleDislike(comment.id)}
                     className={`p-1 text-xs transition ${
-                      comment.isDisliked ? 'text-red-500 font-bold' : 'text-neutral-400 hover:text-white'
+                      comment.isDisliked ? 'text-red-600 dark:text-red-400 font-bold' : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
                     }`}
                   >
                     <ThumbsDown className="w-3.5 h-3.5" />
@@ -197,7 +198,7 @@ export default function CommentsSection({ videoId }) {
 
                   <button
                     onClick={() => showToast('Reply thread feature ready')}
-                    className="text-xs text-neutral-400 hover:text-white font-medium"
+                    className="text-xs text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white font-medium"
                   >
                     Reply
                   </button>
@@ -205,7 +206,7 @@ export default function CommentsSection({ videoId }) {
                   {comment.replyCount && comment.replyCount !== '0' && (
                     <button
                       onClick={() => showToast(`Viewing ${comment.replyCount} replies`)}
-                      className="text-xs text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1 ml-2"
+                      className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-semibold flex items-center gap-1 ml-2"
                     >
                       <MessageCircle className="w-3 h-3" />
                       <span>{comment.replyCount} replies</span>
@@ -215,7 +216,7 @@ export default function CommentsSection({ videoId }) {
                   {comment.isUserComment && (
                     <button
                       onClick={() => handleDelete(comment.id)}
-                      className="text-xs text-neutral-500 hover:text-red-400 p-1 opacity-0 group-hover:opacity-100 transition"
+                      className="text-xs text-neutral-400 dark:text-neutral-500 hover:text-red-500 p-1 opacity-0 group-hover:opacity-100 transition"
                       title="Delete your comment"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
