@@ -91,6 +91,38 @@ export default function VideoPlayer({
     return () => window.removeEventListener('message', handlePostMessage);
   }, [onEnded]);
 
+  // Screen-Off & Lock-Screen Media Session Integration (YouTube Premium Feature)
+  useEffect(() => {
+    if (typeof navigator !== 'undefined' && 'mediaSession' in navigator && title && videoId) {
+      try {
+        navigator.mediaSession.metadata = new MediaMetadata({
+          title: title || 'PlayTube Stream',
+          artist: 'PlayTube Background Player',
+          album: 'PlayTube Ad-Free Stream',
+          artwork: [
+            { src: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`, sizes: '480x360', type: 'image/jpeg' },
+            { src: `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`, sizes: '320x180', type: 'image/jpeg' }
+          ]
+        });
+
+        navigator.mediaSession.playbackState = 'playing';
+
+        navigator.mediaSession.setActionHandler('play', () => {
+          if (iframeRef.current?.contentWindow) {
+            iframeRef.current.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'playVideo' }), '*');
+          }
+        });
+        navigator.mediaSession.setActionHandler('pause', () => {
+          if (iframeRef.current?.contentWindow) {
+            iframeRef.current.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'pauseVideo' }), '*');
+          }
+        });
+      } catch (e) {
+        console.warn('MediaSession notice:', e);
+      }
+    }
+  }, [videoId, title]);
+
   if (!videoId) {
     return (
       <div className="aspect-video w-full bg-neutral-900 rounded-2xl flex items-center justify-center text-neutral-400">

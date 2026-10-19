@@ -62,21 +62,31 @@ async function postYouTubeAPI(endpoint, payload) {
     return data;
   }
 
-  // Web Browser: use proxy (/api/yt on Vite or Vercel rewrites)
-  const proxyUrl = `/api/yt${endpoint}?prettyPrint=false`;
-  const res = await fetch(proxyUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(finalPayload)
-  });
+  // Web Browser: use proxy (/api/yt on Vite or Vercel serverless function)
+  const endpointsToTry = [
+    `/api/yt${endpoint}?prettyPrint=false`,
+    `/api/yt?endpoint=${encodeURIComponent(endpoint)}`
+  ];
 
-  if (!res.ok) {
-    throw new Error(`YouTube API failed with HTTP ${res.status}`);
+  for (const url of endpointsToTry) {
+    try {
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(finalPayload)
+      });
+
+      if (res.ok) {
+        return await res.json();
+      }
+    } catch (e) {
+      console.warn(`Fetch proxy failed for ${url}:`, e);
+    }
   }
 
-  return await res.json();
+  throw new Error(`YouTube API failed for ${endpoint}`);
 }
 
 /**

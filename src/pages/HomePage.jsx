@@ -32,6 +32,11 @@ export default function HomePage() {
         }
         setLoading(false);
       }
+    }).catch((err) => {
+      console.warn('Home feed fetch notice:', err);
+      if (active) {
+        setLoading(false);
+      }
     });
 
     return () => {

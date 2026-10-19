@@ -42,6 +42,8 @@ You can download and install the ready-to-use Android APK directly on your phone
 </div>
 
 ### 🌟 What's New in the Latest Build:
+- 🎧 **YouTube Premium Background & Screen-Off Playback:** Music and videos continue playing seamlessly even when the screen is turned off or locked, with lock-screen notification media controls!
+- 🌐 **Vercel Serverless Proxy:** Web deployment on Vercel (`next-tube-sigma.vercel.app`) loads all live YouTube feeds, comments, and searches without CORS issues.
 - 🎥 **Official 1080p HD Quality Switcher:** Crystal clear streaming. Use the ⚙️ Gear icon on the player to switch freely between 1080p60, 720p, 480p, and 4K!
 - 🔄 **Native Fullscreen & Auto-Landscape:** Tapping fullscreen rotates Android device automatically into immersive landscape view without black borders or quality degradation.
 - ♾️ **Unlimited Infinite Shorts (Reels):** Continuous vertical scrolling with auto-pagination and zero video limit.

@@ -119,4 +119,18 @@ public class MainActivity extends BridgeActivity {
         }
         super.onBackPressed();
     }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        // Background Playback: Prevent WebView from stopping timers/audio when screen locks
+        try {
+            WebView webView = getBridge().getWebView();
+            if (webView != null) {
+                webView.resumeTimers();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 }
