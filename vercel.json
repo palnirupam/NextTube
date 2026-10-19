@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/yt/:path*",
+      "destination": "https://www.youtube.com/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
@@ -12,10 +16,6 @@
         {
           "key": "X-Content-Type-Options",
           "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "SAMEORIGIN"
         }
       ]
     }
