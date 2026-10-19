@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Capacitor } from '@capacitor/core';
 import {
   Play,
   Pause,
@@ -462,9 +463,9 @@ export default function VideoPlayer({ videoId, title, isTheater, onToggleTheater
     );
   }
 
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173';
-  // Use official youtube.com embed with enablejsapi=1, controls=0 for zero watermark and custom controls
-  const embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3&playsinline=1&enablejsapi=1&origin=${encodeURIComponent(origin)}`;
+  const isNative = Capacitor.isNativePlatform();
+  // Use youtube-nocookie.com to completely bypass domain origin restrictions & error 150
+  const embedUrl = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3&playsinline=1&enablejsapi=1${isNative ? '' : `&origin=${encodeURIComponent(window.location.origin)}`}`;
 
   const speeds = ['0.5', '0.75', '1', '1.25', '1.5', '2'];
   const qualities = ['1080p HD (60fps)', '720p HD', '480p SD', 'Auto'];
@@ -489,15 +490,16 @@ export default function VideoPlayer({ videoId, title, isTheater, onToggleTheater
       <div className={`relative w-full bg-black overflow-hidden shadow-2xl transition-all duration-300 ${
         isTheater || isFullscreen ? 'rounded-none border-0' : 'rounded-3xl border border-neutral-800/80'
       }`}>
-        {/* 16:9 Video Canvas (100% Full View, Zero Cropping) */}
-        <div className={`relative w-full bg-black overflow-hidden ${isFullscreen ? 'h-screen' : 'aspect-video'}`}>
+        {/* 16:9 Video Canvas (100% Full View, Zero Cropping, Responsive on all Android devices) */}
+        <div className={`relative w-full bg-black overflow-hidden ${isFullscreen ? 'h-screen' : 'aspect-video min-h-[210px] sm:min-h-[340px]'}`}>
           <iframe
             ref={iframeRef}
             id={`yt-player-${videoId}`}
             src={embedUrl}
             title={title || 'PlayTube Video Player'}
-            referrerPolicy="origin"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            referrerPolicy="no-referrer"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
             onLoad={handleIframeLoad}
             className="w-full h-full border-0 absolute inset-0 pointer-events-none"
           />
@@ -508,6 +510,18 @@ export default function VideoPlayer({ videoId, title, isTheater, onToggleTheater
             onDoubleClick={toggleFullscreen}
             className="absolute inset-0 z-10 cursor-pointer"
           />
+
+          {/* Big Center Play Button when paused or waiting to play */}
+          {!isPlaying && (
+            <div
+              onClick={togglePlay}
+              className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 backdrop-blur-[2px] cursor-pointer group/centerplay transition-all duration-200"
+            >
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center shadow-2xl transition-transform duration-200 group-hover/centerplay:scale-110 active:scale-95">
+                <Play className="w-8 h-8 sm:w-10 sm:h-10 ml-1 fill-white" />
+              </div>
+            </div>
+          )}
 
           {/* Center Play/Pause & Seek Ripple Indicators */}
           {centerRipple && (
