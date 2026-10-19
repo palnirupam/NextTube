@@ -100,6 +100,15 @@ You can download and install the ready-to-use Android APK directly on your phone
 - Instant search suggestions powered by Google Suggest queries JSONP.
 - Built-in Voice Search with live speech-to-text recognition.
 
+### 🎧 8. YouTube Premium Background & Screen-Off Playback
+- **Zero Interruption Screen-Off Listening:** Turn off or lock your Android phone screen, and the music/audio continues streaming without pausing.
+- **Lock-Screen Media Notification:** Control playback (Play, Pause, Skip, Rewind) directly from the Android lock-screen and notification shade via `navigator.mediaSession`.
+- **Picture-in-Picture (PiP):** Minimize the app and keep watching your video in a floating window.
+
+### 🌐 9. High-Performance Vercel Serverless Proxy
+- Automated cloud proxy at `api/yt.js` with server-side InnerTube desktop spoofing.
+- Delivers 100% authentic YouTube home feeds, trending charts, and live comments on Vercel (`next-tube-sigma.vercel.app`) with zero CORS errors.
+
 ---
 
 ## 🛠️ Tech Stack
