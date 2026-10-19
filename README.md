@@ -25,13 +25,30 @@
 
 ---
 
-## 📱 Quick Download
+## 📱 Latest Android APK Download
 
-You can download and install the ready-to-use Android APK directly:
+You can download and install the ready-to-use Android APK directly on your phone:
 
-👉 **[Download PlayTube.apk (4.55 MB)](https://github.com/palnirupam/NextTube/raw/main/PlayTube.apk)**
+<div align="center">
 
-> **Installation Tip:** Transfer the `.apk` to your Android device, tap to install, and allow *Unknown Sources* if prompted.
+<a href="https://github.com/palnirupam/NextTube/raw/main/PlayTube.apk">
+  <img src="https://img.shields.io/badge/📲_Download_Latest_APK-PlayTube.apk_(4.55MB)-E50914?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" />
+</a>
+
+<br/><br/>
+
+👉 **[Direct Download: PlayTube.apk (4.55 MB)](https://github.com/palnirupam/NextTube/raw/main/PlayTube.apk)**
+
+</div>
+
+### 🌟 What's New in the Latest Build:
+- 🎥 **Official 1080p HD Quality Switcher:** Crystal clear streaming. Use the ⚙️ Gear icon on the player to switch freely between 1080p60, 720p, 480p, and 4K!
+- 🔄 **Native Fullscreen & Auto-Landscape:** Tapping fullscreen rotates Android device automatically into immersive landscape view without black borders or quality degradation.
+- ♾️ **Unlimited Infinite Shorts (Reels):** Continuous vertical scrolling with auto-pagination and zero video limit.
+- ⚡ **100% Authentic Live YouTube Engine:** Official InnerTube live comments, real view counts, channel avatars, and up-next queues.
+- ⬇️ **In-App Downloader:** Download 1080p MP4 videos or 320kbps MP3 audio directly to your device storage.
+
+> **Installation Tip:** Download the `.apk` file, tap to install on your Android device, and enable *Install from Unknown Sources* if prompted.
 
 ---
 
