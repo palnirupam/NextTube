@@ -58,11 +58,12 @@ You can download and install the ready-to-use Android APK directly:
   - **Recently uploaded**: Chronological sorting by upload freshness.
 - Integrated **Autoplay Next Queue** with smooth transition when the current video finishes.
 
-### 📱 4. YouTube Shorts with Vertical Gestures
-- Immersive, full-screen vertical reels player.
-- Smooth snap-scrolling touch gestures for mobile.
-- Keyboard navigation (Up/Down arrow keys on desktop).
-- Double-tap heart animation for likes.
+### 📱 4. YouTube Shorts with Unlimited Infinite Scrolling
+- Immersive, full-screen vertical reels player with **unlimited continuous pagination**.
+- Automatic pre-fetching of next viral batches before reaching the bottom (infinite reels feed).
+- Smooth CSS snap-scrolling touch gestures for mobile & swipe physics.
+- Desktop navigation controls (Up/Down arrow keys + on-screen navigation buttons).
+- Double-tap heart animation for likes, real creator badges, and live comments.
 
 ### ⬇️ 5. In-App Video & Audio Downloader
 - **No external redirects or popup spam.**
