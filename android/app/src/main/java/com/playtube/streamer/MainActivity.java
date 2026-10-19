@@ -65,6 +65,12 @@ public class MainActivity extends BridgeActivity {
                 settings.setAllowContentAccess(true);
                 settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
 
+                // Force Desktop Chrome User-Agent to unlock 1080p, 1440p, and 4K maximum bitrate streams
+                String desktopUserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36";
+                settings.setUserAgentString(desktopUserAgent);
+                settings.setUseWideViewPort(true);
+                settings.setLoadWithOverviewMode(true);
+
                 // Expose native bridge for seamless background & lock screen media sync
                 webView.addJavascriptInterface(new PlayTubeNativeInterface(), "PlayTubeNative");
 
@@ -174,6 +180,26 @@ public class MainActivity extends BridgeActivity {
         public void onVideoStopped() {
             isPlaying = false;
             runOnUiThread(() -> stopPlaybackService());
+        }
+
+        @JavascriptInterface
+        public void setFullscreen(boolean fullscreen) {
+            runOnUiThread(() -> {
+                if (fullscreen) {
+                    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
+                    WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+                    if (controller != null) {
+                        controller.hide(WindowInsetsCompat.Type.systemBars());
+                        controller.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+                    }
+                } else {
+                    setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+                    WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+                    if (controller != null) {
+                        controller.show(WindowInsetsCompat.Type.systemBars());
+                    }
+                }
+            });
         }
     }
 
