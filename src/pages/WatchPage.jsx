@@ -103,6 +103,7 @@ export default function WatchPage() {
               isTheater={isTheater}
               onToggleTheater={() => setIsTheater(false)}
               onEnded={handleVideoEnded}
+              onDownload={() => setDownloadOpen(true)}
             />
           </div>
         </div>
@@ -122,6 +123,7 @@ export default function WatchPage() {
                 isTheater={isTheater}
                 onToggleTheater={() => setIsTheater(true)}
                 onEnded={handleVideoEnded}
+                onDownload={() => setDownloadOpen(true)}
               />
             )}
 

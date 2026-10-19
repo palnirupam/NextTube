@@ -41,7 +41,7 @@ export default function ShortCard({ short, isActive }) {
   // Safe embed for YouTube Shorts with native Android support
   const [isMuted, setIsMuted] = useState(false);
   const isNative = typeof window !== 'undefined' && (window.Capacitor?.isNativePlatform?.() || window.location.protocol === 'capacitor:');
-  const embedUrl = `https://www.youtube-nocookie.com/embed/${short.id}?autoplay=${isActive ? 1 : 0}&loop=1&playlist=${short.id}&controls=0&modestbranding=1&rel=0&playsinline=1&mute=${isMuted ? 1 : 0}&iv_load_policy=3&enablejsapi=1${isNative ? '' : `&origin=${encodeURIComponent(window.location.origin)}`}`;
+  const embedUrl = `https://www.youtube-nocookie.com/embed/${short.id}?autoplay=${isActive ? 1 : 0}&loop=1&playlist=${short.id}&controls=0&modestbranding=1&rel=0&playsinline=1&mute=${isMuted ? 1 : 0}&iv_load_policy=3&enablejsapi=1&vq=hd1080${isNative ? '' : `&origin=${encodeURIComponent(window.location.origin)}`}`;
 
   return (
     <div className="relative w-full h-full sm:max-w-[420px] sm:h-[calc(100vh-5rem)] sm:max-h-[760px] mx-auto rounded-none sm:rounded-3xl overflow-hidden bg-black shadow-2xl flex items-center justify-center sm:border sm:border-neutral-800/80 group">
