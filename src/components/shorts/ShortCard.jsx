@@ -38,21 +38,21 @@ export default function ShortCard({ short, isActive }) {
     if (!disliked) setLiked(false);
   };
 
-  // Safe embed for YouTube Shorts with scale cropping to remove YouTube logos
+  // Safe embed for YouTube Shorts with native Android support
   const [isMuted, setIsMuted] = useState(false);
-  const origin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:5173';
-  const embedUrl = `https://www.youtube-nocookie.com/embed/${short.id}?autoplay=${isActive ? 1 : 0}&loop=1&playlist=${short.id}&controls=0&modestbranding=1&rel=0&playsinline=1&mute=${isMuted ? 1 : 0}&iv_load_policy=3&origin=${encodeURIComponent(origin)}`;
+  const isNative = typeof window !== 'undefined' && (window.Capacitor?.isNativePlatform?.() || window.location.protocol === 'capacitor:');
+  const embedUrl = `https://www.youtube-nocookie.com/embed/${short.id}?autoplay=${isActive ? 1 : 0}&loop=1&playlist=${short.id}&controls=0&modestbranding=1&rel=0&playsinline=1&mute=${isMuted ? 1 : 0}&iv_load_policy=3&enablejsapi=1${isNative ? '' : `&origin=${encodeURIComponent(window.location.origin)}`}`;
 
   return (
-    <div className="relative w-full max-w-[390px] h-[calc(100vh-6rem)] max-h-[760px] mx-auto rounded-3xl overflow-hidden bg-black shadow-2xl flex items-center justify-center border border-neutral-800/80 group">
-      {/* Video Container with Over-Scaling to completely eliminate YouTube watermark */}
+    <div className="relative w-full h-full sm:max-w-[420px] sm:h-[calc(100vh-5rem)] sm:max-h-[760px] mx-auto rounded-none sm:rounded-3xl overflow-hidden bg-black shadow-2xl flex items-center justify-center sm:border sm:border-neutral-800/80 group">
+      {/* Video Container - Edge to edge fit */}
       <div className="absolute inset-0 overflow-hidden flex items-center justify-center">
         <iframe
           src={embedUrl}
           title={short.title}
-          referrerPolicy="origin"
+          referrerPolicy="no-referrer"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          className="w-[114%] h-[114%] -ml-[7%] -mt-[7%] object-cover border-0 pointer-events-auto"
+          className="w-full h-full object-cover border-0 pointer-events-auto"
         />
       </div>
 

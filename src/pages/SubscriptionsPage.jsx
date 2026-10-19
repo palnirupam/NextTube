@@ -1,20 +1,36 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { CURATED_VIDEOS } from '../services/api';
+import { searchVideos } from '../services/api';
 import VideoCard from '../components/common/VideoCard';
-import { Tv } from 'lucide-react';
+import { Tv, Compass } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function SubscriptionsPage() {
   const { subscriptions } = useApp();
   const navigate = useNavigate();
+  const [subVideos, setSubVideos] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const subChannelNames = subscriptions.map(s => s.name.toLowerCase());
-  const subscriptionVideos = CURATED_VIDEOS.filter(v =>
-    subChannelNames.some(name => v.channel.toLowerCase().includes(name))
-  );
-
-  const displayVideos = subscriptionVideos.length > 0 ? subscriptionVideos : CURATED_VIDEOS;
+  useEffect(() => {
+    let active = true;
+    if (subscriptions.length > 0) {
+      setLoading(true);
+      const topChannel = subscriptions[0].name;
+      searchVideos(topChannel).then((res) => {
+        if (active) {
+          setSubVideos(res.videos || res || []);
+          setLoading(false);
+        }
+      }).catch(() => {
+        if (active) setLoading(false);
+      });
+    } else {
+      setSubVideos([]);
+    }
+    return () => {
+      active = false;
+    };
+  }, [subscriptions]);
 
   return (
     <div className="flex-1 min-h-screen bg-neutral-50 dark:bg-[#0f0f0f] pb-24 md:pb-12 text-neutral-900 dark:text-white px-3 sm:px-6 pt-4 max-w-[2000px] mx-auto transition-colors duration-200">
@@ -56,11 +72,31 @@ export default function SubscriptionsPage() {
       {/* Latest Videos from Subscriptions */}
       <div>
         <h3 className="text-lg font-bold mb-4 text-neutral-900 dark:text-neutral-200">Latest from your channels</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-y-7 gap-x-4">
-          {displayVideos.map((video) => (
-            <VideoCard key={video.id} video={video} />
-          ))}
-        </div>
+        {loading ? (
+          <div className="py-12 flex justify-center text-neutral-500">
+            <div className="w-8 h-8 border-4 border-red-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : subVideos.length > 0 ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-y-7 gap-x-4">
+            {subVideos.map((video) => (
+              <VideoCard key={video.id} video={video} />
+            ))}
+          </div>
+        ) : (
+          <div className="py-16 text-center max-w-md mx-auto">
+            <Tv className="w-16 h-16 mx-auto text-neutral-400 dark:text-neutral-600 mb-4" />
+            <h4 className="text-base font-bold text-neutral-800 dark:text-neutral-200 mb-1">Don't miss new videos</h4>
+            <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-5">
+              Subscribe to your favorite creators to see their latest uploads here.
+            </p>
+            <button
+              onClick={() => navigate('/')}
+              className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium text-sm rounded-full shadow-lg transition"
+            >
+              Explore Trending Videos
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -29,14 +29,14 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-neutral-50 dark:bg-[#0f0f0f] text-neutral-900 dark:text-[#f1f1f1] flex flex-col font-sans antialiased selection:bg-red-600 selection:text-white transition-colors duration-200">
-      {/* Top YouTube Header */}
-      <Navbar />
+      {/* Top YouTube Header - Hidden on Shorts for full-screen immersive reel experience */}
+      {!isShortsPage && <Navbar />}
 
       {/* Center Layout Container: Sidebar + Main Router Body */}
       <div className="flex flex-1 w-full overflow-hidden">
         {!hideSidebar && <Sidebar />}
 
-        <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+        <div className={`flex-1 flex flex-col min-w-0 ${isShortsPage ? 'overflow-hidden h-[calc(100dvh-3.5rem)]' : 'overflow-y-auto'}`}>
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/watch" element={<WatchPage />} />

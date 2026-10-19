@@ -64,7 +64,7 @@ export default function ShortsPage() {
   }, [activeIndex, shorts.length]);
 
   return (
-    <div className="flex-1 h-[calc(100vh-3.5rem)] bg-neutral-900 dark:bg-[#0f0f0f] relative overflow-hidden flex items-center justify-center transition-colors duration-200">
+    <div className="flex-1 h-[calc(100dvh-3.5rem)] bg-black relative overflow-hidden flex items-center justify-center">
       {/* Vertical Snap Container for Native Mouse Wheel & Touch Swiping */}
       <div
         ref={containerRef}
@@ -75,7 +75,7 @@ export default function ShortsPage() {
         {shorts.map((short, index) => (
           <section
             key={short.id + '-' + index}
-            className="w-full h-[calc(100vh-3.5rem)] shrink-0 snap-start snap-always flex items-center justify-center p-2 sm:p-4 relative"
+            className="w-full h-[calc(100dvh-3.5rem)] shrink-0 snap-start snap-always flex items-center justify-center p-0 sm:p-3 relative"
           >
             <ShortCard
               short={short}

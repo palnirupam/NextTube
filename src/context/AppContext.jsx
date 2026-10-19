@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { CURATED_VIDEOS } from '../services/api';
 
 const AppContext = createContext();
 
@@ -33,7 +32,7 @@ export function AppProvider({ children }) {
   // Liked Videos
   const [likedVideos, setLikedVideos] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem('playtube_liked')) || [CURATED_VIDEOS[0]];
+      return JSON.parse(localStorage.getItem('playtube_liked')) || [];
     } catch {
       return [];
     }
@@ -51,26 +50,7 @@ export function AppProvider({ children }) {
   // Subscriptions
   const [subscriptions, setSubscriptions] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem('playtube_subs')) || [
-        {
-          id: 'UCq-Fj5jknLsUf-MWSy4_brA',
-          name: 'Sony Music India',
-          avatar: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=100&h=100&fit=crop',
-          subscribers: '62.4M'
-        },
-        {
-          id: 'UCSJ4gkVC6NrvII8umztf0Ow',
-          name: 'Lofi Girl',
-          avatar: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=100&h=100&fit=crop',
-          subscribers: '14.2M'
-        },
-        {
-          id: 'UCqECaJ8Gagnn7YCbPEzWH6g',
-          name: 'Taylor Swift',
-          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop',
-          subscribers: '59.8M'
-        }
-      ];
+      return JSON.parse(localStorage.getItem('playtube_subs')) || [];
     } catch {
       return [];
     }
@@ -79,7 +59,7 @@ export function AppProvider({ children }) {
   // Watch Later
   const [watchLater, setWatchLater] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem('playtube_watch_later')) || [CURATED_VIDEOS[2]];
+      return JSON.parse(localStorage.getItem('playtube_watch_later')) || [];
     } catch {
       return [];
     }
@@ -88,7 +68,7 @@ export function AppProvider({ children }) {
   // Watch History
   const [watchHistory, setWatchHistory] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem('playtube_history')) || [CURATED_VIDEOS[0], CURATED_VIDEOS[1]];
+      return JSON.parse(localStorage.getItem('playtube_history')) || [];
     } catch {
       return [];
     }

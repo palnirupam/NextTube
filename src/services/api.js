@@ -17,59 +17,7 @@ export const INNERTUBE_CLIENT = {
   platform: 'DESKTOP'
 };
 
-// Curated Emergency Offline Fallback (Used ONLY if device is completely offline with no network)
-export const CURATED_VIDEOS = [
-  {
-    id: 'fJ9rUzIMcZQ',
-    title: 'Queen – Bohemian Rhapsody (Official Video Remastered)',
-    channel: 'Queen Official',
-    channelId: 'UCiMhD4jzUqG-IgPzUmmytRQ',
-    channelAvatar: 'https://yt3.ggpht.com/MiFTTCMl22bQ46F91rXFVhZ7PnBfLujsRWNxMik7NKVRDRBc-uBE7fba_3r9vTN39JvfRmh8nVU=s88-c-k-c0x00ffffff-no-rj',
-    subscribers: '19.1M',
-    thumbnail: 'https://i.ytimg.com/vi/fJ9rUzIMcZQ/hqdefault.jpg',
-    duration: '5:59',
-    views: '2.1B views',
-    timestamp: '16 years ago',
-    category: 'Music',
-    description: 'The official music video for Queen - Bohemian Rhapsody. Taken from A Night At The Opera, 1975.',
-    likes: '16M',
-    dislikes: '42K'
-  },
-  {
-    id: '09839DpTctU',
-    title: 'Eagles - Hotel California (Live 1977) (Official Video) [HD]',
-    channel: 'Eagles',
-    channelId: 'UCPTypnDNlOZVnD7MY30_YBw',
-    channelAvatar: 'https://yt3.ggpht.com/HyT9iuM844Gs5XEXeXiwgT0GdPa2-I2m7TRbR56baSz-D8VS3rZog-wmScfC9Vx8421a76SYtg=s68-c-k-c0x00ffffff-no-rj',
-    subscribers: '3.8M',
-    thumbnail: 'https://i.ytimg.com/vi/09839DpTctU/hqdefault.jpg',
-    duration: '6:52',
-    views: '941M views',
-    timestamp: '3 years ago',
-    category: 'Music',
-    description: 'Official Live Video for Hotel California performed by Eagles live at The Capital Centre, March 1977.',
-    likes: '5.2M',
-    dislikes: '12K'
-  }
-];
-
-export const CURATED_SHORTS = [
-  {
-    id: 'lVINGvZBFhA',
-    title: 'Teachers in 1st period vs last period #shorts #ytshorts',
-    channel: 'Sejal Gaba',
-    channelAvatar: 'https://api.dicebear.com/7.x/identicon/svg?seed=SejalGaba',
-    likes: '265M views',
-    commentsCount: '12.4K',
-    musicTitle: 'Original Sound',
-    description: 'Teachers in 1st period vs last period #shorts',
-    thumbnail: 'https://i.ytimg.com/vi/lVINGvZBFhA/hqdefault.jpg'
-  }
-];
-
-/**
- * Clean URL helper ensuring https:
- */
+// Clean media URL helper ensuring https:
 export function cleanMediaUrl(url) {
   if (!url) return '';
   if (url.startsWith('//')) return 'https:' + url;
@@ -103,7 +51,15 @@ async function postYouTubeAPI(endpoint, payload) {
       },
       data: finalPayload
     });
-    return res.data;
+    let data = res.data;
+    if (typeof data === 'string') {
+      try {
+        data = JSON.parse(data);
+      } catch {
+        // keep as is
+      }
+    }
+    return data;
   }
 
   // Web Browser: use proxy (/api/yt on Vite or Vercel rewrites)
@@ -359,7 +315,7 @@ export async function searchVideos(query) {
       }
     }
 
-    if (extractedChannels.length > 0 || extractedVideos.length > 0) {
+    if (extractedChannels.length > 0 || extractedVideos.length > 0 || extractedShorts.length > 0) {
       const unified = [...extractedChannels, ...extractedVideos];
       unified.channels = extractedChannels;
       unified.videos = extractedVideos;
@@ -370,11 +326,11 @@ export async function searchVideos(query) {
     console.warn('Real YouTube search notice:', err);
   }
 
-  const fallback = [...CURATED_VIDEOS];
-  fallback.channels = [];
-  fallback.videos = fallback;
-  fallback.shorts = CURATED_SHORTS;
-  return fallback;
+  const emptyResult = [];
+  emptyResult.channels = [];
+  emptyResult.videos = [];
+  emptyResult.shorts = [];
+  return emptyResult;
 }
 
 /**
@@ -509,8 +465,8 @@ export async function getChannelProfile(channelId, channelName) {
 
     return {
       channel: chanMeta,
-      videos: videos.length > 0 ? videos : CURATED_VIDEOS,
-      shorts: shorts.length > 0 ? shorts : CURATED_SHORTS
+      videos,
+      shorts
     };
   } catch (e) {
     console.error('getChannelProfile error:', e);
@@ -524,8 +480,8 @@ export async function getChannelProfile(channelId, channelName) {
         avatar: `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(channelName || 'creator')}`,
         description: 'Official YouTube channel profile.'
       },
-      videos: searchBackupVideos.length > 0 ? searchBackupVideos : CURATED_VIDEOS,
-      shorts: CURATED_SHORTS
+      videos: searchBackupVideos,
+      shorts: []
     };
   }
 }
@@ -535,21 +491,29 @@ export async function getChannelProfile(channelId, channelName) {
  * Delivers continuous list-by-list video streaming like real YouTube
  */
 export async function getHomeFeed(category = 'All', page = 1) {
-  let query = 'Trending viral videos';
+  let query = 'latest viral videos entertainment';
 
   if (category === 'Music') {
     const musicQueries = [
-      'Top Trending Music Videos 2026',
-      'Latest viral Bollywood & Global songs',
-      'Arijit Singh Shreya Ghoshal hits',
-      'Billboard Hot 100 top music songs'
+      'new trending music videos 2026',
+      'latest bollywood songs new hindi hits',
+      'top billboard global hits 2026',
+      'arijit singh shreya ghoshal new song'
     ];
     query = musicQueries[(page - 1) % musicQueries.length];
+  } else if (category === 'Bollywood Hits') {
+    const bollywoodQueries = [
+      'bollywood latest hits 2026',
+      'new hindi songs 2026',
+      'bollywood top chartbusters songs',
+      'latest hindi romantic songs 2026'
+    ];
+    query = bollywoodQueries[(page - 1) % bollywoodQueries.length];
   } else if (category === 'Gaming') {
     const gamingQueries = [
-      'Top Trending Gaming Videos 2026',
-      'GTA 6 Gameplay walkthrough and trailers',
-      'Minecraft speedruns and live gaming tournaments',
+      'top trending gaming videos 2026',
+      'GTA 6 gameplay walkthrough and trailers',
+      'Minecraft speedruns tournaments',
       'Esports championship top moments'
     ];
     query = gamingQueries[(page - 1) % gamingQueries.length];
@@ -559,20 +523,23 @@ export async function getHomeFeed(category = 'All', page = 1) {
     query = 'Live stream music news gaming now';
   } else if (category === 'Coding') {
     const codingQueries = [
-      'React full stack web development tutorials',
+      'React full stack web development tutorials 2026',
       'Python AI and Machine Learning masterclass',
       'Modern web apps coding freeCodeCamp'
     ];
     query = codingQueries[(page - 1) % codingQueries.length];
   } else if (category === 'Podcasts') {
     query = 'Popular podcasts full episode interviews';
+  } else if (category === 'News') {
+    query = 'latest breaking news headlines live today';
   } else {
-    // 'All' - page rotation with real trending YouTube keywords
+    // 'All' - page rotation with fresh, diverse trending YouTube keywords
     const allQueries = [
-      'Trending videos and global music hits',
-      'Viral news entertainment and songs',
-      'Top trending videos worldwide',
-      'Popular new uploads today'
+      'latest viral videos entertainment',
+      'new trending music videos 2026',
+      'top trending videos today',
+      'popular new uploads global entertainment',
+      'trending news and viral clips'
     ];
     query = allQueries[(page - 1) % allQueries.length];
   }
@@ -590,44 +557,45 @@ export async function getHomeFeed(category = 'All', page = 1) {
   }
 
   return {
-    videos: CURATED_VIDEOS,
-    shorts: CURATED_SHORTS
+    videos: [],
+    shorts: []
   };
 }
 
 /**
  * Live YouTube Shorts Feed
- * Delivers endless vertical video feed for reels/shorts
+ * Delivers endless vertical video feed for reels/shorts directly from YouTube
  */
-export async function getShortsFeed(query = '#shorts trending') {
+export async function getShortsFeed(query = '#shorts') {
   try {
     const res = await searchVideos(query);
     let shorts = res.shorts || [];
 
-    // Also convert any video items that look short or from search
-    if (shorts.length < 5 && res.videos && res.videos.length > 0) {
-      const converted = res.videos.map(v => ({
-        id: v.id,
-        title: v.title,
-        channel: v.channel,
-        channelAvatar: v.channelAvatar,
-        likes: v.views || '150K',
-        commentsCount: '1.2K',
-        musicTitle: `${v.channel} - Original Sound`,
-        description: v.title,
-        thumbnail: v.thumbnail
-      }));
-      shorts = [...shorts, ...converted];
+    if (shorts.length < 10) {
+      const backupRes = await searchVideos('#shortsvideo viral');
+      if (backupRes.shorts && backupRes.shorts.length > 0) {
+        shorts = [...shorts, ...backupRes.shorts];
+      }
     }
 
-    if (shorts.length > 0) {
-      return shorts;
+    // Deduplicate by video ID
+    const seen = new Set();
+    const uniqueShorts = [];
+    for (const s of shorts) {
+      if (s.id && !seen.has(s.id)) {
+        seen.add(s.id);
+        uniqueShorts.push(s);
+      }
+    }
+
+    if (uniqueShorts.length > 0) {
+      return uniqueShorts;
     }
   } catch (err) {
     console.warn('getShortsFeed error:', err);
   }
 
-  return CURATED_SHORTS;
+  return [];
 }
 
 /**
@@ -636,7 +604,7 @@ export async function getShortsFeed(query = '#shorts trending') {
  * Returns official channel avatar (yt3.ggpht.com), exact subscriber count, view count & date
  */
 export async function getVideoDetails(videoId) {
-  if (!videoId) return CURATED_VIDEOS[0];
+  if (!videoId) return null;
 
   try {
     const payload = {

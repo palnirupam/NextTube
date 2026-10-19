@@ -85,12 +85,12 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-40 w-full h-14 bg-white/95 dark:bg-[#0f0f0f]/95 backdrop-blur-md px-3 sm:px-4 flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800/80 safe-top transition-colors duration-200">
-      {/* Mobile Search Overlay */}
+      {/* Mobile Search Overlay: Replaces entire header when active to prevent overlapping */}
       {isMobileSearchActive ? (
-        <div className="absolute inset-0 z-50 bg-white dark:bg-[#0f0f0f] flex items-center px-2 gap-2">
+        <div className="flex-1 flex items-center gap-2 w-full h-full bg-white dark:bg-[#0f0f0f] animate-in fade-in duration-100">
           <button
             onClick={() => setIsMobileSearchActive(false)}
-            className="p-2 text-neutral-700 dark:text-neutral-300 hover:text-black dark:hover:text-white rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800"
+            className="p-2 text-neutral-700 dark:text-neutral-300 hover:text-black dark:hover:text-white rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 shrink-0"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -101,18 +101,18 @@ export default function Navbar() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search PlayTube..."
-              className="w-full bg-transparent px-4 py-2 text-sm text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 outline-none"
+              className="w-full bg-transparent px-3 py-1.5 text-sm text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 outline-none"
             />
             {query && (
               <button
                 type="button"
                 onClick={() => setQuery('')}
-                className="p-1.5 text-neutral-400 hover:text-neutral-600 dark:hover:text-white"
+                className="p-1 text-neutral-400 hover:text-neutral-600 dark:hover:text-white shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
             )}
-            <button type="submit" className="px-4 py-2 bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-l border-neutral-300 dark:border-neutral-700">
+            <button type="submit" className="px-3 py-1.5 bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-l border-neutral-300 dark:border-neutral-700 shrink-0">
               <Search className="w-4 h-4" />
             </button>
           </form>
@@ -122,15 +122,15 @@ export default function Navbar() {
               setIsMobileSearchActive(false);
               setIsVoiceModalOpen(true);
             }}
-            className="p-2.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200"
+            className="p-2 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 shrink-0"
           >
             <Mic className="w-4 h-4" />
           </button>
         </div>
-      ) : null}
-
-      {/* Left: Hamburger Menu & Brand Logo */}
-      <div className="flex items-center gap-3 sm:gap-4 shrink-0">
+      ) : (
+        <>
+          {/* Left: Hamburger Menu & Brand Logo */}
+          <div className="flex items-center gap-3 sm:gap-4 shrink-0">
         <button
           onClick={toggleSidebar}
           aria-label="Toggle Navigation Sidebar"
@@ -320,6 +320,8 @@ export default function Navbar() {
           <UserAccountModal isOpen={isUserOpen} onClose={() => setIsUserOpen(false)} />
         </div>
       </div>
+      </>
+      )}
     </header>
   );
 }
