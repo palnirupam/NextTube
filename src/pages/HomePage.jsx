@@ -67,7 +67,7 @@ export default function HomePage() {
   }, [loadingMore, hasMore, page, activeCategory]);
 
   return (
-    <div className="flex-1 min-h-screen bg-[#0f0f0f] pb-24 md:pb-12 text-white">
+    <div className="flex-1 min-h-screen bg-neutral-50 dark:bg-[#0f0f0f] pb-24 md:pb-12 text-neutral-900 dark:text-white transition-colors duration-200">
       {/* Category Chips Bar */}
       <CategoryChips
         activeCategory={activeCategory}
@@ -81,12 +81,12 @@ export default function HomePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-y-8 gap-x-4">
             {[...Array(10)].map((_, i) => (
               <div key={i} className="animate-pulse space-y-3">
-                <div className="aspect-video bg-neutral-850 rounded-2xl w-full"></div>
+                <div className="aspect-video bg-neutral-200 dark:bg-neutral-850 rounded-2xl w-full"></div>
                 <div className="flex gap-3">
-                  <div className="w-9 h-9 rounded-full bg-neutral-800 shrink-0"></div>
+                  <div className="w-9 h-9 rounded-full bg-neutral-300 dark:bg-neutral-800 shrink-0"></div>
                   <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-neutral-800 rounded w-5/6"></div>
-                    <div className="h-3 bg-neutral-800 rounded w-1/2"></div>
+                    <div className="h-4 bg-neutral-300 dark:bg-neutral-800 rounded w-5/6"></div>
+                    <div className="h-3 bg-neutral-300 dark:bg-neutral-800 rounded w-1/2"></div>
                   </div>
                 </div>
               </div>
@@ -102,22 +102,22 @@ export default function HomePage() {
             </div>
 
             {/* YouTube Shorts Shelf (Horizontal preview on Home) */}
-            <div className="my-10 pt-6 border-t border-neutral-800">
+            <div className="my-10 pt-6 border-t border-neutral-200 dark:border-neutral-800">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <div className="p-1.5 rounded-lg bg-red-600/20 text-red-500">
                     <Film className="w-5 h-5" />
                   </div>
-                  <h3 className="text-lg font-bold text-neutral-100 flex items-center gap-2">
+                  <h3 className="text-lg font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
                     <span>PlayTube Shorts</span>
-                    <span className="text-[10px] font-semibold text-red-400 bg-red-600/10 px-2 py-0.5 rounded-full border border-red-500/20">
+                    <span className="text-[10px] font-semibold text-red-500 bg-red-500/10 px-2 py-0.5 rounded-full border border-red-500/20">
                       Trending
                     </span>
                   </h3>
                 </div>
                 <button
                   onClick={() => navigate('/shorts')}
-                  className="flex items-center gap-1 text-xs font-semibold text-neutral-400 hover:text-white transition"
+                  className="flex items-center gap-1 text-xs font-semibold text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition"
                 >
                   View all <ChevronRight className="w-4 h-4" />
                 </button>
@@ -128,7 +128,7 @@ export default function HomePage() {
                   <div
                     key={s.id}
                     onClick={() => navigate('/shorts')}
-                    className="group cursor-pointer flex flex-col relative aspect-[9/16] rounded-2xl overflow-hidden bg-neutral-900 border border-neutral-800 shadow hover:shadow-red-500/15 transition-all duration-300 hover:-translate-y-1"
+                    className="group cursor-pointer flex flex-col relative aspect-[9/16] rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 shadow hover:shadow-red-500/15 transition-all duration-300 hover:-translate-y-1"
                   >
                     <img
                       src={s.thumbnail || `https://i.ytimg.com/vi/${s.id}/hqdefault.jpg`}
@@ -143,7 +143,7 @@ export default function HomePage() {
                       <p className="text-xs font-semibold text-white line-clamp-2 leading-snug">
                         {s.title}
                       </p>
-                      <span className="text-[11px] text-neutral-400 mt-1 font-medium">
+                      <span className="text-[11px] text-neutral-300 mt-1 font-medium">
                         {s.likes || 'Trending'}
                       </span>
                     </div>
@@ -156,7 +156,7 @@ export default function HomePage() {
             {videos.length > 8 && (
               <div>
                 <div className="flex items-center justify-between mb-4 mt-6">
-                  <h3 className="text-base font-bold text-neutral-300 flex items-center gap-2">
+                  <h3 className="text-base font-bold text-neutral-800 dark:text-neutral-300 flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-red-500" />
                     <span>Recommended For You ({videos.length} videos)</span>
                   </h3>
@@ -176,7 +176,7 @@ export default function HomePage() {
                 <button
                   onClick={loadMoreVideos}
                   disabled={loadingMore}
-                  className="px-8 py-3 rounded-full bg-neutral-850 hover:bg-neutral-800 text-neutral-200 hover:text-white font-bold text-sm border border-neutral-700/80 transition shadow-lg flex items-center gap-2 active:scale-95"
+                  className="px-8 py-3 rounded-full bg-white hover:bg-neutral-100 text-neutral-800 hover:text-neutral-950 border-neutral-300/80 shadow-md dark:bg-neutral-850 dark:hover:bg-neutral-800 dark:text-neutral-200 dark:hover:text-white font-bold text-sm dark:border-neutral-700/80 transition flex items-center gap-2 active:scale-95"
                 >
                   {loadingMore ? (
                     <>

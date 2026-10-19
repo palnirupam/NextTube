@@ -28,7 +28,7 @@ function AppContent() {
   const hideSidebar = isWatchPage || isShortsPage;
 
   return (
-    <div className="min-h-screen bg-[#0f0f0f] text-[#f1f1f1] flex flex-col font-sans antialiased selection:bg-red-600 selection:text-white">
+    <div className="min-h-screen bg-neutral-50 dark:bg-[#0f0f0f] text-neutral-900 dark:text-[#f1f1f1] flex flex-col font-sans antialiased selection:bg-red-600 selection:text-white transition-colors duration-200">
       {/* Top YouTube Header */}
       <Navbar />
 

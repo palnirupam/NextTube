@@ -26,7 +26,7 @@ function formatTime(seconds) {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-export default function VideoPlayer({ videoId, title, isTheater, onToggleTheater }) {
+export default function VideoPlayer({ videoId, title, isTheater, onToggleTheater, onEnded }) {
   const [isPlaying, setIsPlaying] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -242,6 +242,7 @@ export default function VideoPlayer({ videoId, title, isTheater, onToggleTheater
                 // Ended
                 setIsPlaying(false);
                 setShowControls(true);
+                onEnded?.();
               }
             }
           }
@@ -341,7 +342,7 @@ export default function VideoPlayer({ videoId, title, isTheater, onToggleTheater
       <div className={`relative w-full bg-black overflow-hidden shadow-2xl transition-all duration-300 ${
         isTheater || isFullscreen ? 'rounded-none border-0' : 'rounded-3xl border border-neutral-800/80'
       }`}>
-        {/* 16:9 Video Canvas (Overscan 114% to push out YouTube watermark and native overlay links) */}
+        {/* 16:9 Video Canvas (100% Full View, Zero Cropping) */}
         <div className={`relative w-full bg-black overflow-hidden ${isFullscreen ? 'h-screen' : 'aspect-video'}`}>
           <iframe
             ref={iframeRef}
@@ -350,7 +351,7 @@ export default function VideoPlayer({ videoId, title, isTheater, onToggleTheater
             title={title || 'PlayTube Video Player'}
             referrerPolicy="origin"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            className="w-[114%] h-[114%] -left-[7%] -top-[7%] border-0 absolute pointer-events-none"
+            className="w-full h-full border-0 absolute inset-0 pointer-events-none"
           />
 
           {/* Click Overlay (Play / Pause & Double-Click Fullscreen) */}

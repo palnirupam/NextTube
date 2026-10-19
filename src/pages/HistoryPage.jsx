@@ -15,31 +15,31 @@ export default function HistoryPage() {
   );
 
   return (
-    <div className="flex-1 min-h-screen bg-[#0f0f0f] pb-24 md:pb-12 text-white px-3 sm:px-6 pt-4 max-w-[1400px] mx-auto">
+    <div className="flex-1 min-h-screen bg-neutral-50 dark:bg-[#0f0f0f] pb-24 md:pb-12 text-neutral-900 dark:text-white px-3 sm:px-6 pt-4 max-w-[1400px] mx-auto transition-colors duration-200">
       {/* Header and Controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-neutral-800">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-neutral-200 dark:border-neutral-800">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2.5 text-neutral-100">
+          <h1 className="text-2xl font-bold flex items-center gap-2.5 text-neutral-900 dark:text-neutral-100">
             <History className="w-6 h-6 text-red-500" /> Watch History
           </h1>
-          <p className="text-xs text-neutral-400 mt-1">
+          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
             {watchHistory.length} videos in your history
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           {/* Search inside History */}
-          <div className="flex items-center bg-[#1e1e1e] border border-neutral-700 rounded-full px-3 py-1.5 w-full sm:w-64">
+          <div className="flex items-center bg-white dark:bg-[#1e1e1e] border border-neutral-300 dark:border-neutral-700 rounded-full px-3 py-1.5 w-full sm:w-64 shadow-sm">
             <Search className="w-4 h-4 text-neutral-400 shrink-0" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search history..."
-              className="bg-transparent border-none outline-none text-xs text-neutral-100 px-2 w-full placeholder-neutral-500"
+              className="bg-transparent border-none outline-none text-xs text-neutral-900 dark:text-neutral-100 px-2 w-full placeholder-neutral-400 dark:placeholder-neutral-500"
             />
             {searchTerm && (
-              <button onClick={() => setSearchTerm('')} className="text-neutral-400 hover:text-white">
+              <button onClick={() => setSearchTerm('')} className="text-neutral-400 hover:text-neutral-800 dark:hover:text-white">
                 <X className="w-3.5 h-3.5" />
               </button>
             )}
@@ -49,7 +49,7 @@ export default function HistoryPage() {
           {watchHistory.length > 0 && (
             <button
               onClick={clearHistory}
-              className="px-4 py-2 rounded-full bg-red-600/20 hover:bg-red-600/30 text-red-400 text-xs font-semibold flex items-center gap-1.5 transition shrink-0 border border-red-500/30"
+              className="px-4 py-2 rounded-full bg-red-600/10 dark:bg-red-600/20 hover:bg-red-600/20 dark:hover:bg-red-600/30 text-red-600 dark:text-red-400 text-xs font-semibold flex items-center gap-1.5 transition shrink-0 border border-red-500/30"
             >
               <Trash2 className="w-3.5 h-3.5" />
               <span>Clear all</span>
@@ -65,10 +65,10 @@ export default function HistoryPage() {
             <div
               key={video.id}
               onClick={() => navigate(`/watch?v=${video.id}`)}
-              className="flex flex-col sm:flex-row gap-4 p-2.5 rounded-2xl hover:bg-neutral-800/50 transition cursor-pointer group"
+              className="flex flex-col sm:flex-row gap-4 p-2.5 rounded-2xl hover:bg-neutral-200/50 dark:hover:bg-neutral-800/50 transition cursor-pointer group"
             >
               {/* Thumbnail */}
-              <div className="relative w-full sm:w-64 aspect-video rounded-xl overflow-hidden bg-neutral-900 shrink-0">
+              <div className="relative w-full sm:w-64 aspect-video rounded-xl overflow-hidden bg-neutral-200 dark:bg-neutral-900 shrink-0 shadow-sm">
                 <img
                   src={video.thumbnail}
                   alt={video.title}
@@ -82,19 +82,19 @@ export default function HistoryPage() {
               {/* Meta details */}
               <div className="flex-1 min-w-0 flex flex-col justify-between py-1">
                 <div>
-                  <h3 className="text-base font-semibold text-neutral-100 group-hover:text-red-400 transition line-clamp-2">
+                  <h3 className="text-base font-semibold text-neutral-900 dark:text-neutral-100 group-hover:text-red-600 dark:group-hover:text-red-400 transition line-clamp-2">
                     {video.title}
                   </h3>
-                  <p className="text-xs text-neutral-400 mt-1 font-medium">
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 font-medium">
                     {video.channel} • {formatViews(video.views)} • {video.timestamp}
                   </p>
-                  <p className="text-xs text-neutral-400 mt-2 line-clamp-2 leading-relaxed">
+                  <p className="text-xs text-neutral-600 dark:text-neutral-400 mt-2 line-clamp-2 leading-relaxed">
                     {video.description}
                   </p>
                 </div>
 
                 <div className="flex items-center justify-between mt-3">
-                  <span className="text-[11px] text-neutral-500 flex items-center gap-1">
+                  <span className="text-[11px] text-neutral-400 dark:text-neutral-500 flex items-center gap-1">
                     <Clock className="w-3.5 h-3.5" /> Watched on PlayTube
                   </span>
                   <button
@@ -102,7 +102,7 @@ export default function HistoryPage() {
                       e.stopPropagation();
                       removeFromHistory(video.id);
                     }}
-                    className="p-1.5 text-neutral-500 hover:text-red-400 rounded-full hover:bg-neutral-700 transition"
+                    className="p-1.5 text-neutral-400 hover:text-red-500 dark:text-neutral-500 dark:hover:text-red-400 rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-700 transition"
                     title="Remove from history"
                   >
                     <X className="w-4 h-4" />
@@ -112,10 +112,10 @@ export default function HistoryPage() {
             </div>
           ))
         ) : (
-          <div className="text-center py-16 text-neutral-400">
-            <History className="w-12 h-12 mx-auto mb-3 text-neutral-600" />
+          <div className="text-center py-16 text-neutral-500 dark:text-neutral-400">
+            <History className="w-12 h-12 mx-auto mb-3 text-neutral-400 dark:text-neutral-600" />
             <p className="text-base font-semibold">No watch history found</p>
-            <p className="text-xs text-neutral-500 mt-1">Videos you watch will show up here.</p>
+            <p className="text-xs text-neutral-400 dark:text-neutral-500 mt-1">Videos you watch will show up here.</p>
           </div>
         )}
       </div>

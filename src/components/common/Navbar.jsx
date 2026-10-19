@@ -84,35 +84,35 @@ export default function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full h-14 bg-[#0f0f0f] dark:bg-[#0f0f0f] bg-opacity-95 dark:bg-opacity-95 backdrop-blur-md px-3 sm:px-4 flex items-center justify-between border-b border-neutral-800/80 safe-top">
+    <header className="sticky top-0 z-40 w-full h-14 bg-white/95 dark:bg-[#0f0f0f]/95 backdrop-blur-md px-3 sm:px-4 flex items-center justify-between border-b border-neutral-200 dark:border-neutral-800/80 safe-top transition-colors duration-200">
       {/* Mobile Search Overlay */}
       {isMobileSearchActive ? (
-        <div className="absolute inset-0 z-50 bg-[#0f0f0f] flex items-center px-2 gap-2">
+        <div className="absolute inset-0 z-50 bg-white dark:bg-[#0f0f0f] flex items-center px-2 gap-2">
           <button
             onClick={() => setIsMobileSearchActive(false)}
-            className="p-2 text-neutral-300 hover:text-white rounded-full hover:bg-neutral-800"
+            className="p-2 text-neutral-700 dark:text-neutral-300 hover:text-black dark:hover:text-white rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <form onSubmit={handleSearch} className="flex-1 flex items-center bg-[#121212] border border-neutral-700 rounded-full overflow-hidden">
+          <form onSubmit={handleSearch} className="flex-1 flex items-center bg-neutral-100 dark:bg-[#121212] border border-neutral-300 dark:border-neutral-700 rounded-full overflow-hidden">
             <input
               type="text"
               autoFocus
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search PlayTube..."
-              className="w-full bg-transparent px-4 py-2 text-sm text-neutral-100 placeholder-neutral-500 outline-none"
+              className="w-full bg-transparent px-4 py-2 text-sm text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 outline-none"
             />
             {query && (
               <button
                 type="button"
                 onClick={() => setQuery('')}
-                className="p-1.5 text-neutral-400 hover:text-white"
+                className="p-1.5 text-neutral-400 hover:text-neutral-600 dark:hover:text-white"
               >
                 <X className="w-4 h-4" />
               </button>
             )}
-            <button type="submit" className="px-4 py-2 bg-neutral-800 text-neutral-300 border-l border-neutral-700">
+            <button type="submit" className="px-4 py-2 bg-neutral-200 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 border-l border-neutral-300 dark:border-neutral-700">
               <Search className="w-4 h-4" />
             </button>
           </form>
@@ -122,7 +122,7 @@ export default function Navbar() {
               setIsMobileSearchActive(false);
               setIsVoiceModalOpen(true);
             }}
-            className="p-2.5 rounded-full bg-neutral-800 text-neutral-200"
+            className="p-2.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200"
           >
             <Mic className="w-4 h-4" />
           </button>
@@ -134,7 +134,7 @@ export default function Navbar() {
         <button
           onClick={toggleSidebar}
           aria-label="Toggle Navigation Sidebar"
-          className="p-2 text-neutral-300 hover:text-white rounded-full hover:bg-neutral-800 transition hidden md:flex items-center justify-center"
+          className="p-2 text-neutral-700 dark:text-neutral-300 hover:text-black dark:hover:text-white rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition hidden md:flex items-center justify-center cursor-pointer"
         >
           <Menu className="w-5 h-5" />
         </button>
@@ -147,9 +147,9 @@ export default function Navbar() {
             </div>
           </div>
           <div className="flex items-center tracking-tighter">
-            <span className="font-extrabold text-lg sm:text-xl text-neutral-100 font-sans tracking-tight">Play</span>
-            <span className="font-bold text-lg sm:text-xl text-red-500 font-sans tracking-tight">Tube</span>
-            <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest ml-1 bg-neutral-800/80 px-1 py-0.5 rounded border border-neutral-700/50">
+            <span className="font-extrabold text-lg sm:text-xl text-neutral-900 dark:text-neutral-100 font-sans tracking-tight">Play</span>
+            <span className="font-bold text-lg sm:text-xl text-red-600 font-sans tracking-tight">Tube</span>
+            <span className="text-[9px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-widest ml-1 bg-neutral-100 dark:bg-neutral-800/80 px-1 py-0.5 rounded border border-neutral-300 dark:border-neutral-700/50">
               PRO
             </span>
           </div>
@@ -159,8 +159,8 @@ export default function Navbar() {
       {/* Center: Smart Search Bar (Desktop & Tablet) */}
       <div ref={searchBoxRef} className="hidden sm:flex items-center flex-1 max-w-xl mx-4 relative">
         <form onSubmit={handleSearch} className="flex w-full items-center">
-          <div className={`flex items-center flex-1 bg-[#121212] border rounded-l-full overflow-hidden transition-all ${
-            isFocused ? 'border-blue-500 shadow-inner' : 'border-neutral-700 hover:border-neutral-600'
+          <div className={`flex items-center flex-1 bg-neutral-100 dark:bg-[#121212] border rounded-l-full overflow-hidden transition-all ${
+            isFocused ? 'border-blue-500 shadow-inner' : 'border-neutral-300 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-600'
           }`}>
             {isFocused && (
               <Search className="w-4 h-4 ml-4 text-neutral-400 shrink-0" />
@@ -171,7 +171,7 @@ export default function Navbar() {
               onChange={(e) => setQuery(e.target.value)}
               onFocus={() => setIsFocused(true)}
               placeholder="Search (e.g. Arijit Singh, Taylor Swift, Lo-fi, React)..."
-              className={`w-full bg-transparent py-2 text-sm text-neutral-100 placeholder-neutral-500 outline-none ${
+              className={`w-full bg-transparent py-2 text-sm text-neutral-900 dark:text-neutral-100 placeholder-neutral-500 outline-none ${
                 isFocused ? 'px-3' : 'px-4'
               }`}
             />
@@ -179,7 +179,7 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={() => setQuery('')}
-                className="p-1.5 mr-2 text-neutral-400 hover:text-white rounded-full hover:bg-neutral-800"
+                className="p-1.5 mr-2 text-neutral-400 hover:text-neutral-600 dark:hover:text-white rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-800"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -188,7 +188,7 @@ export default function Navbar() {
           <button
             type="submit"
             title="Search"
-            className="h-10 px-6 bg-[#222222] hover:bg-[#2c2c2c] text-neutral-200 border border-l-0 border-neutral-700 rounded-r-full flex items-center justify-center transition"
+            className="h-10 px-6 bg-neutral-100 hover:bg-neutral-200 dark:bg-[#222222] dark:hover:bg-[#2c2c2c] text-neutral-700 dark:text-neutral-200 border border-l-0 border-neutral-300 dark:border-neutral-700 rounded-r-full flex items-center justify-center transition cursor-pointer"
           >
             <Search className="w-4 h-4" />
           </button>
@@ -198,14 +198,14 @@ export default function Navbar() {
         <button
           onClick={() => setIsVoiceModalOpen(true)}
           title="Search with your voice"
-          className="ml-3 p-2.5 rounded-full bg-[#1e1e1e] hover:bg-[#2a2a2a] text-neutral-200 border border-neutral-700/60 transition shrink-0 hover:scale-105"
+          className="ml-3 p-2.5 rounded-full bg-neutral-100 hover:bg-neutral-200 dark:bg-[#1e1e1e] dark:hover:bg-[#2a2a2a] text-neutral-700 dark:text-neutral-200 border border-neutral-300 dark:border-neutral-700/60 transition shrink-0 hover:scale-105 cursor-pointer"
         >
           <Mic className="w-4 h-4" />
         </button>
 
         {/* Search Suggestions & Recent History Dropdown */}
         {isFocused && (
-          <div className="absolute top-12 left-0 right-12 bg-[#212121] border border-neutral-700 rounded-2xl shadow-2xl py-2 z-50 overflow-hidden animate-in fade-in duration-150">
+          <div className="absolute top-12 left-0 right-12 bg-white dark:bg-[#212121] border border-neutral-200 dark:border-neutral-700 rounded-2xl shadow-2xl py-2 z-50 overflow-hidden animate-in fade-in duration-150">
             {/* Live Suggestions */}
             {suggestions.length > 0 && (
               <div className="mb-2">

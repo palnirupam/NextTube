@@ -40,7 +40,7 @@ export default function ExplorePage() {
   }, [currentCat]);
 
   return (
-    <div className="flex-1 min-h-screen bg-[#0f0f0f] pb-24 md:pb-12 text-white px-3 sm:px-6 pt-4 max-w-[2000px] mx-auto">
+    <div className="flex-1 min-h-screen bg-neutral-50 dark:bg-[#0f0f0f] pb-24 md:pb-12 text-neutral-900 dark:text-white px-3 sm:px-6 pt-4 max-w-[2000px] mx-auto transition-colors duration-200">
       {/* Category Navigation Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5 mb-8">
         {exploreTabs.map((tab) => {
@@ -52,7 +52,7 @@ export default function ExplorePage() {
               key={tab.name}
               onClick={() => setSearchParams({ cat: tab.name })}
               className={`p-4 rounded-2xl bg-gradient-to-br ${tab.color} cursor-pointer group shadow-lg hover:scale-[1.02] transition-all relative overflow-hidden ${
-                isActive ? 'ring-2 ring-white shadow-2xl' : 'opacity-90 hover:opacity-100'
+                isActive ? 'ring-2 ring-neutral-900 dark:ring-white shadow-2xl' : 'opacity-90 hover:opacity-100'
               }`}
             >
               <div className="flex items-center justify-between">
@@ -67,7 +67,7 @@ export default function ExplorePage() {
       {/* Explore Section Heading */}
       <div className="flex items-center gap-2 mb-6">
         <Sparkles className="w-5 h-5 text-red-500" />
-        <h2 className="text-xl font-bold text-neutral-100">
+        <h2 className="text-xl font-bold text-neutral-900 dark:text-neutral-100">
           Top {currentCat} Streams
         </h2>
       </div>
@@ -77,12 +77,12 @@ export default function ExplorePage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-y-7 gap-x-4">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="animate-pulse space-y-3">
-              <div className="aspect-video bg-neutral-800 rounded-2xl w-full"></div>
+              <div className="aspect-video bg-neutral-200 dark:bg-neutral-800 rounded-2xl w-full"></div>
               <div className="flex gap-3">
-                <div className="w-9 h-9 rounded-full bg-neutral-800 shrink-0"></div>
+                <div className="w-9 h-9 rounded-full bg-neutral-300 dark:bg-neutral-800 shrink-0"></div>
                 <div className="flex-1 space-y-2">
-                  <div className="h-4 bg-neutral-800 rounded w-5/6"></div>
-                  <div className="h-3 bg-neutral-800 rounded w-1/2"></div>
+                  <div className="h-4 bg-neutral-300 dark:bg-neutral-800 rounded w-5/6"></div>
+                  <div className="h-3 bg-neutral-300 dark:bg-neutral-800 rounded w-1/2"></div>
                 </div>
               </div>
             </div>

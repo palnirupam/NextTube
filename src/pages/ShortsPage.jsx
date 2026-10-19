@@ -64,7 +64,7 @@ export default function ShortsPage() {
   }, [activeIndex, shorts.length]);
 
   return (
-    <div className="flex-1 h-[calc(100vh-3.5rem)] bg-[#0f0f0f] relative overflow-hidden flex items-center justify-center">
+    <div className="flex-1 h-[calc(100vh-3.5rem)] bg-neutral-900 dark:bg-[#0f0f0f] relative overflow-hidden flex items-center justify-center transition-colors duration-200">
       {/* Vertical Snap Container for Native Mouse Wheel & Touch Swiping */}
       <div
         ref={containerRef}

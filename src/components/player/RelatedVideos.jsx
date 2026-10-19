@@ -4,8 +4,15 @@ import { getRelatedVideos, CURATED_VIDEOS } from '../../services/api';
 import { formatViews } from '../../utils/formatters';
 import { useApp } from '../../context/AppContext';
 
-export default function RelatedVideos({ currentVideoId, currentCategory, videoTitle, channelName }) {
-  const [autoplay, setAutoplay] = useState(true);
+export default function RelatedVideos({
+  currentVideoId,
+  currentCategory,
+  videoTitle,
+  channelName,
+  autoplay = true,
+  onToggleAutoplay,
+  onNextVideoDetermined
+}) {
   const [filter, setFilter] = useState('All');
   const [relatedList, setRelatedList] = useState(CURATED_VIDEOS.filter(v => v.id !== currentVideoId));
   const [loading, setLoading] = useState(false);
@@ -18,7 +25,11 @@ export default function RelatedVideos({ currentVideoId, currentCategory, videoTi
 
     getRelatedVideos(currentVideoId, videoTitle || channelName || currentCategory).then((items) => {
       if (active && items && items.length > 0) {
-        setRelatedList(items.filter(v => v.id !== currentVideoId));
+        const filtered = items.filter(v => v.id !== currentVideoId);
+        setRelatedList(filtered);
+        if (filtered[0]) {
+          onNextVideoDetermined?.(filtered[0]);
+        }
         setLoading(false);
       }
     });
@@ -26,7 +37,7 @@ export default function RelatedVideos({ currentVideoId, currentCategory, videoTi
     return () => {
       active = false;
     };
-  }, [currentVideoId, videoTitle, channelName, currentCategory]);
+  }, [currentVideoId, videoTitle, channelName, currentCategory, onNextVideoDetermined]);
 
   const filters = ['All', 'From related artist', 'Related', 'Recently uploaded'];
 
@@ -40,17 +51,18 @@ export default function RelatedVideos({ currentVideoId, currentCategory, videoTi
     <div className="w-full">
       {/* Autoplay & Filters Header */}
       <div className="flex items-center justify-between mb-3 px-1">
-        <h4 className="text-sm font-bold text-neutral-200">Up next</h4>
+        <h4 className="text-sm font-bold text-neutral-900 dark:text-neutral-200">Up next</h4>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-neutral-400">Autoplay</span>
+          <span className="text-xs text-neutral-500 dark:text-neutral-400">Autoplay</span>
           <button
-            onClick={() => setAutoplay(!autoplay)}
-            className={`w-9 h-5 rounded-full p-0.5 transition-colors duration-200 ease-in-out ${
-              autoplay ? 'bg-red-600' : 'bg-neutral-700'
+            onClick={onToggleAutoplay}
+            className={`w-9 h-5 rounded-full p-0.5 transition-colors duration-200 ease-in-out cursor-pointer ${
+              autoplay ? 'bg-red-600' : 'bg-neutral-300 dark:bg-neutral-700'
             }`}
+            title={`Autoplay is ${autoplay ? 'ON' : 'OFF'}`}
           >
             <div
-              className={`w-4 h-4 rounded-full bg-white transition-transform duration-200 ease-in-out ${
+              className={`w-4 h-4 rounded-full bg-white transition-transform duration-200 ease-in-out shadow-sm ${
                 autoplay ? 'translate-x-4' : 'translate-x-0'
               }`}
             />
@@ -64,10 +76,10 @@ export default function RelatedVideos({ currentVideoId, currentCategory, videoTi
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-3 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition ${
+            className={`px-3 py-1 rounded-lg text-xs font-medium whitespace-nowrap transition cursor-pointer ${
               filter === f
-                ? 'bg-white text-black font-semibold'
-                : 'bg-neutral-800 text-neutral-300 hover:bg-neutral-700'
+                ? 'bg-neutral-900 text-white dark:bg-white dark:text-black font-semibold'
+                : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-700 border border-neutral-200 dark:border-neutral-700/50'
             }`}
           >
             {f}
@@ -81,10 +93,10 @@ export default function RelatedVideos({ currentVideoId, currentCategory, videoTi
           <div
             key={video.id}
             onClick={() => handleVideoClick(video)}
-            className="flex gap-3 group cursor-pointer hover:bg-neutral-800/40 p-1.5 rounded-xl transition"
+            className="flex gap-3 group cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800/50 p-1.5 rounded-xl transition"
           >
             {/* Thumbnail */}
-            <div className="relative w-40 sm:w-44 aspect-video rounded-xl overflow-hidden bg-neutral-900 shrink-0">
+            <div className="relative w-40 sm:w-44 aspect-video rounded-xl overflow-hidden bg-neutral-200 dark:bg-neutral-900 shrink-0 shadow-sm">
               <img
                 src={video.thumbnail}
                 alt={video.title}
@@ -99,17 +111,19 @@ export default function RelatedVideos({ currentVideoId, currentCategory, videoTi
               </span>
             </div>
 
-            {/* Meta */}
-            <div className="flex-1 min-w-0 pr-1">
-              <h5 className="text-xs font-semibold text-neutral-100 line-clamp-2 leading-snug group-hover:text-red-400 transition">
+            {/* Video Info */}
+            <div className="flex-1 min-w-0 flex flex-col justify-start">
+              <h5 className="text-xs sm:text-sm font-semibold text-neutral-900 dark:text-neutral-100 line-clamp-2 leading-snug group-hover:text-red-600 transition">
                 {video.title}
               </h5>
-              <p className="text-[11px] text-neutral-400 mt-1 truncate hover:text-neutral-200">
+              <p className="text-[11px] text-neutral-600 dark:text-neutral-400 mt-1 hover:text-neutral-900 dark:hover:text-neutral-200 transition">
                 {video.channel}
               </p>
-              <p className="text-[11px] text-neutral-400 mt-0.5">
-                {formatViews(video.views)} • {video.timestamp}
-              </p>
+              <div className="flex items-center gap-1.5 text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                <span>{video.views}</span>
+                <span>•</span>
+                <span>{video.timestamp}</span>
+              </div>
             </div>
           </div>
         ))}

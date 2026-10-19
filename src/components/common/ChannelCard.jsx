@@ -18,12 +18,12 @@ export default function ChannelCard({ channel }) {
   return (
     <div
       onClick={handleOpenChannel}
-      className="w-full bg-gradient-to-r from-neutral-900 via-[#181818] to-neutral-900 rounded-3xl p-5 sm:p-7 border border-neutral-800 shadow-xl hover:border-neutral-650 hover:shadow-2xl hover:shadow-red-950/20 transition-all duration-300 mb-6 group cursor-pointer"
+      className="w-full bg-white dark:bg-gradient-to-r dark:from-neutral-900 dark:via-[#181818] dark:to-neutral-900 rounded-3xl p-5 sm:p-7 border border-neutral-200 dark:border-neutral-800 shadow-xl hover:border-neutral-300 dark:hover:border-neutral-650 hover:shadow-2xl hover:shadow-black/5 dark:hover:shadow-red-950/20 transition-all duration-300 mb-6 group cursor-pointer"
     >
       <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 sm:gap-7">
         {/* Creator Avatar with Glow Ring */}
         <div className="relative shrink-0">
-          <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden ring-4 ring-neutral-700/80 group-hover:ring-red-500 transition-all duration-300 shadow-2xl bg-neutral-900">
+          <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden ring-4 ring-neutral-200 dark:ring-neutral-700/80 group-hover:ring-red-500 transition-all duration-300 shadow-2xl bg-neutral-100 dark:bg-neutral-900">
             <img
               src={channel.avatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(channel.title)}`}
               alt={channel.title}
@@ -35,7 +35,7 @@ export default function ChannelCard({ channel }) {
               }}
             />
           </div>
-          <div className="absolute -bottom-1 -right-1 p-1 bg-red-600 rounded-full border-2 border-[#0f0f0f] shadow-md">
+          <div className="absolute -bottom-1 -right-1 p-1 bg-red-600 rounded-full border-2 border-white dark:border-[#0f0f0f] shadow-md">
             <Users className="w-3.5 h-3.5 text-white" />
           </div>
         </div>
@@ -43,20 +43,20 @@ export default function ChannelCard({ channel }) {
         {/* Creator Info */}
         <div className="flex-1 min-w-0 text-center sm:text-left">
           <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-            <h2 className="text-xl sm:text-2xl font-black text-neutral-100 group-hover:text-red-400 transition-colors truncate">
+            <h2 className="text-xl sm:text-2xl font-black text-neutral-900 dark:text-neutral-100 group-hover:text-red-500 dark:group-hover:text-red-400 transition-colors truncate">
               {channel.title}
             </h2>
-            <CheckCircle2 className="w-5 h-5 text-neutral-400 fill-neutral-400 text-[#0f0f0f] mx-auto sm:mx-0 shrink-0" />
+            <CheckCircle2 className="w-5 h-5 text-neutral-500 dark:text-neutral-400 fill-neutral-500 dark:fill-neutral-400 text-white dark:text-[#0f0f0f] mx-auto sm:mx-0 shrink-0" />
           </div>
 
-          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-xs sm:text-sm text-neutral-400 mt-1 font-medium">
-            <span className="text-neutral-300 font-semibold">{channel.handle || '@creator'}</span>
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-1 font-medium">
+            <span className="text-neutral-700 dark:text-neutral-300 font-semibold">{channel.handle || '@creator'}</span>
             <span>•</span>
-            <span className="text-red-400 font-semibold">{channel.subscribers}</span>
+            <span className="text-red-500 dark:text-red-400 font-semibold">{channel.subscribers}</span>
             {channel.videoCount && (
               <>
                 <span>•</span>
-                <span className="flex items-center gap-1 text-neutral-300">
+                <span className="flex items-center gap-1 text-neutral-600 dark:text-neutral-300">
                   <Video className="w-3.5 h-3.5" />
                   {channel.videoCount}
                 </span>
@@ -64,7 +64,7 @@ export default function ChannelCard({ channel }) {
             )}
           </div>
 
-          <p className="text-xs sm:text-sm text-neutral-400 mt-2.5 line-clamp-2 max-w-2xl leading-relaxed">
+          <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 mt-2.5 line-clamp-2 max-w-2xl leading-relaxed">
             {channel.description || 'Welcome to the official creator channel. Watch exclusive videos and streaming content on PlayTube.'}
           </p>
 
@@ -80,8 +80,8 @@ export default function ChannelCard({ channel }) {
             onClick={() => toggleSubscription({ name: channel.title, avatar: channel.avatar, subscribers: channel.subscribers })}
             className={`px-6 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 shadow-lg flex items-center gap-2 active:scale-95 ${
               subscribed
-                ? 'bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700'
-                : 'bg-white hover:bg-neutral-200 text-neutral-950 hover:shadow-red-500/20'
+                ? 'bg-neutral-200 hover:bg-neutral-300 text-neutral-800 dark:bg-neutral-800 dark:hover:bg-neutral-700 dark:text-neutral-200 border border-neutral-300 dark:border-neutral-700'
+                : 'bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:hover:bg-neutral-200 dark:text-neutral-950 hover:shadow-red-500/20'
             }`}
           >
             {subscribed ? (

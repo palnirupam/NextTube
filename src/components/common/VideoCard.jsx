@@ -44,11 +44,11 @@ export default function VideoCard({ video }) {
   const isLive = video.duration === 'LIVE' || video.views?.toString().includes('watching');
 
   return (
-    <div className="flex flex-col group cursor-pointer relative select-none rounded-2xl p-1.5 transition-all duration-300 ease-out hover:-translate-y-1.5 hover:bg-neutral-850/60 hover:shadow-2xl hover:shadow-red-950/20 hover:ring-1 hover:ring-neutral-700/50">
+    <div className="flex flex-col group cursor-pointer relative select-none rounded-2xl p-1.5 transition-all duration-300 ease-out hover:-translate-y-1.5 hover:bg-neutral-200/50 dark:hover:bg-neutral-850/60 hover:shadow-xl hover:shadow-black/5 dark:hover:shadow-red-950/20 hover:ring-1 hover:ring-neutral-300/60 dark:hover:ring-neutral-700/50">
       {/* Thumbnail Container with Ambient Hover Glow */}
       <div
         onClick={handleCardClick}
-        className="relative aspect-video w-full rounded-2xl overflow-hidden bg-neutral-900 transition-all duration-300 shadow-md group-hover:shadow-red-600/10"
+        className="relative aspect-video w-full rounded-2xl overflow-hidden bg-neutral-200 dark:bg-neutral-900 transition-all duration-300 shadow-md group-hover:shadow-red-600/10"
       >
         <img
           src={video.thumbnail}
@@ -96,7 +96,7 @@ export default function VideoCard({ video }) {
               src={video.channelAvatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(video.channel)}`}
               alt={video.channel}
               referrerPolicy="no-referrer"
-              className="w-9 h-9 rounded-full object-cover ring-1 ring-neutral-700/80 group-hover:ring-2 group-hover:ring-red-500 transition-all duration-300 shadow"
+              className="w-9 h-9 rounded-full object-cover ring-1 ring-neutral-300 dark:ring-neutral-700/80 group-hover:ring-2 group-hover:ring-red-500 transition-all duration-300 shadow"
             />
           </div>
         </div>
@@ -105,21 +105,21 @@ export default function VideoCard({ video }) {
         <div onClick={handleCardClick} className="flex-1 min-w-0 pr-1">
           <h3
             title={video.title}
-            className="text-sm font-semibold text-neutral-100 line-clamp-2 leading-snug group-hover:text-red-400 transition-colors duration-200"
+            className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 line-clamp-2 leading-snug group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors duration-200"
           >
             {video.title}
           </h3>
 
-          <div className="mt-1 text-xs text-neutral-400 flex flex-col sm:flex-row sm:items-center sm:gap-1.5 flex-wrap">
+          <div className="mt-1 text-xs text-neutral-600 dark:text-neutral-400 flex flex-col sm:flex-row sm:items-center sm:gap-1.5 flex-wrap">
             <span
               onClick={handleChannelClick}
-              className="hover:text-neutral-100 transition font-medium flex items-center gap-1 cursor-pointer"
+              className="hover:text-neutral-900 dark:hover:text-neutral-100 transition font-medium flex items-center gap-1 cursor-pointer"
             >
               {video.channel}
-              <CheckCircle2 className="w-3.5 h-3.5 text-neutral-400 fill-neutral-400 text-[#0f0f0f]" />
+              <CheckCircle2 className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400 fill-neutral-500 dark:fill-neutral-400 text-white dark:text-[#0f0f0f]" />
             </span>
 
-            <div className="flex items-center gap-1 text-neutral-400">
+            <div className="flex items-center gap-1 text-neutral-500 dark:text-neutral-400">
               <span className="hidden sm:inline">•</span>
               <span>{video.views}</span>
               <span>•</span>
@@ -135,7 +135,7 @@ export default function VideoCard({ video }) {
               e.stopPropagation();
               setMenuOpen(!menuOpen);
             }}
-            className="p-1.5 text-neutral-400 hover:text-white rounded-full hover:bg-neutral-800 opacity-80 sm:opacity-0 group-hover:opacity-100 transition"
+            className="p-1.5 text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-800 opacity-80 sm:opacity-0 group-hover:opacity-100 transition"
             title="Options"
           >
             <MoreVertical className="w-4 h-4" />
@@ -144,16 +144,16 @@ export default function VideoCard({ video }) {
           {menuOpen && (
             <div
               onClick={(e) => e.stopPropagation()}
-              className="absolute right-0 top-8 w-52 bg-[#282828] text-white rounded-2xl shadow-2xl border border-neutral-700 py-1.5 z-40 text-xs animate-in fade-in zoom-in-95 duration-100 backdrop-blur-md"
+              className="absolute right-0 top-8 w-52 bg-white dark:bg-[#282828] text-neutral-900 dark:text-white rounded-2xl shadow-2xl border border-neutral-200 dark:border-neutral-700 py-1.5 z-40 text-xs animate-in fade-in zoom-in-95 duration-100 backdrop-blur-md"
             >
               <button
                 onClick={() => {
                   toggleWatchLater(video);
                   setMenuOpen(false);
                 }}
-                className="w-full px-3.5 py-2.5 text-left flex items-center gap-3 hover:bg-neutral-700/60 transition"
+                className="w-full px-3.5 py-2.5 text-left flex items-center gap-3 hover:bg-neutral-100 dark:hover:bg-neutral-700/60 transition"
               >
-                <Clock className="w-4 h-4 text-neutral-400" />
+                <Clock className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
                 <span>{isWatchLater(video.id) ? 'Remove from Watch Later' : 'Save to Watch Later'}</span>
               </button>
 
@@ -162,9 +162,9 @@ export default function VideoCard({ video }) {
                   toggleLikeVideo(video);
                   setMenuOpen(false);
                 }}
-                className="w-full px-3.5 py-2.5 text-left flex items-center gap-3 hover:bg-neutral-700/60 transition"
+                className="w-full px-3.5 py-2.5 text-left flex items-center gap-3 hover:bg-neutral-100 dark:hover:bg-neutral-700/60 transition"
               >
-                <ThumbsUp className="w-4 h-4 text-neutral-400" />
+                <ThumbsUp className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
                 <span>{isLiked(video.id) ? 'Unlike Video' : 'Add to Liked Videos'}</span>
               </button>
 
@@ -173,9 +173,9 @@ export default function VideoCard({ video }) {
                   setMenuOpen(false);
                   setShareOpen(true);
                 }}
-                className="w-full px-3.5 py-2.5 text-left flex items-center gap-3 hover:bg-neutral-700/60 transition"
+                className="w-full px-3.5 py-2.5 text-left flex items-center gap-3 hover:bg-neutral-100 dark:hover:bg-neutral-700/60 transition"
               >
-                <Share2 className="w-4 h-4 text-neutral-400" />
+                <Share2 className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
                 <span>Share Video</span>
               </button>
 
@@ -184,20 +184,20 @@ export default function VideoCard({ video }) {
                   setMenuOpen(false);
                   setDownloadOpen(true);
                 }}
-                className="w-full px-3.5 py-2.5 text-left flex items-center gap-3 hover:bg-neutral-700/60 transition"
+                className="w-full px-3.5 py-2.5 text-left flex items-center gap-3 hover:bg-neutral-100 dark:hover:bg-neutral-700/60 transition"
               >
-                <Download className="w-4 h-4 text-neutral-400" />
+                <Download className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
                 <span>Download (MP4 / MP3)</span>
               </button>
 
-              <div className="h-px bg-neutral-700 my-1"></div>
+              <div className="h-px bg-neutral-200 dark:bg-neutral-700 my-1"></div>
 
               <button
                 onClick={() => {
                   toggleDislikeVideo(video.id);
                   setMenuOpen(false);
                 }}
-                className="w-full px-3.5 py-2.5 text-left flex items-center gap-3 text-neutral-400 hover:text-red-400 hover:bg-neutral-700/60 transition"
+                className="w-full px-3.5 py-2.5 text-left flex items-center gap-3 text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-neutral-100 dark:hover:bg-neutral-700/60 transition"
               >
                 <Ban className="w-4 h-4" />
                 <span>Not Interested</span>

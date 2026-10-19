@@ -51,10 +51,10 @@ export default function ChannelPage() {
 
   if (loading || !channelData) {
     return (
-      <div className="flex-1 min-h-screen bg-[#0f0f0f] p-4 flex items-center justify-center">
+      <div className="flex-1 min-h-screen bg-neutral-50 dark:bg-[#0f0f0f] p-4 flex items-center justify-center transition-colors duration-200">
         <div className="flex flex-col items-center gap-3">
           <div className="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-neutral-400 text-sm">Loading Creator Profile...</p>
+          <p className="text-neutral-500 dark:text-neutral-400 text-sm">Loading Creator Profile...</p>
         </div>
       </div>
     );
@@ -63,7 +63,7 @@ export default function ChannelPage() {
   const subscribed = isSubscribed(channelData.title);
 
   return (
-    <div className="flex-1 min-h-screen bg-[#0f0f0f] pb-24 md:pb-12 text-white">
+    <div className="flex-1 min-h-screen bg-neutral-50 dark:bg-[#0f0f0f] pb-24 md:pb-12 text-neutral-900 dark:text-white transition-colors duration-200">
       {/* Widescreen Channel Banner Artwork */}
       <div className="w-full h-36 sm:h-52 md:h-64 bg-gradient-to-r from-red-950 via-neutral-900 to-purple-950 relative overflow-hidden shadow-inner">
         <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px]"></div>
@@ -72,10 +72,10 @@ export default function ChannelPage() {
 
       {/* Main Channel Header Container */}
       <div className="max-w-[1700px] mx-auto px-4 sm:px-8">
-        <div className="flex flex-col md:flex-row items-center md:items-start gap-6 -mt-14 sm:-mt-20 relative z-10 pb-6 border-b border-neutral-800">
+        <div className="flex flex-col md:flex-row items-center md:items-start gap-6 -mt-14 sm:-mt-20 relative z-10 pb-6 border-b border-neutral-200 dark:border-neutral-800">
           {/* Creator Avatar with Glow Ring */}
           <div className="relative shrink-0">
-            <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-full overflow-hidden ring-4 ring-[#0f0f0f] shadow-2xl bg-neutral-900">
+            <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-full overflow-hidden ring-4 ring-neutral-100 dark:ring-[#0f0f0f] shadow-2xl bg-neutral-200 dark:bg-neutral-900">
               <img
                 src={channelData.avatar}
                 alt={channelData.title}
@@ -91,21 +91,21 @@ export default function ChannelPage() {
           {/* Profile Details */}
           <div className="flex-1 min-w-0 text-center md:text-left pt-2">
             <div className="flex flex-col md:flex-row md:items-center gap-2">
-              <h1 className="text-2xl sm:text-3xl font-black text-neutral-100 flex items-center justify-center md:justify-start gap-2">
+              <h1 className="text-2xl sm:text-3xl font-black text-neutral-900 dark:text-neutral-100 flex items-center justify-center md:justify-start gap-2">
                 <span>{channelData.title}</span>
-                <CheckCircle2 className="w-6 h-6 text-neutral-400 fill-neutral-400 text-[#0f0f0f] shrink-0" />
+                <CheckCircle2 className="w-6 h-6 text-neutral-500 dark:text-neutral-400 fill-neutral-500 dark:fill-neutral-400 text-white dark:text-[#0f0f0f] shrink-0" />
               </h1>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 text-xs sm:text-sm text-neutral-400 mt-1.5 font-medium">
-              <span className="text-neutral-200 font-bold">{channelData.handle}</span>
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-1.5 font-medium">
+              <span className="text-neutral-800 dark:text-neutral-200 font-bold">{channelData.handle}</span>
               <span>•</span>
-              <span className="text-red-400 font-semibold">{channelData.subscribers}</span>
+              <span className="text-red-500 dark:text-red-400 font-semibold">{channelData.subscribers}</span>
               <span>•</span>
-              <span className="text-neutral-300">{videos.length} videos</span>
+              <span className="text-neutral-700 dark:text-neutral-300">{videos.length} videos</span>
             </div>
 
-            <p className="text-xs sm:text-sm text-neutral-300 mt-3 max-w-3xl leading-relaxed">
+            <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-300 mt-3 max-w-3xl leading-relaxed">
               {channelData.description}
             </p>
 
@@ -115,8 +115,8 @@ export default function ChannelPage() {
                 onClick={() => toggleSubscription({ name: channelData.title, avatar: channelData.avatar, subscribers: channelData.subscribers })}
                 className={`px-6 py-2.5 rounded-full text-xs sm:text-sm font-bold transition-all duration-200 shadow-lg flex items-center gap-2 active:scale-95 ${
                   subscribed
-                    ? 'bg-neutral-800 hover:bg-neutral-700 text-neutral-200 border border-neutral-700'
-                    : 'bg-white hover:bg-neutral-200 text-neutral-950 hover:shadow-red-500/20'
+                    ? 'bg-neutral-200 hover:bg-neutral-300 text-neutral-800 dark:bg-neutral-800 dark:hover:bg-neutral-700 dark:text-neutral-200 border border-neutral-300 dark:border-neutral-700'
+                    : 'bg-neutral-900 hover:bg-neutral-800 text-white dark:bg-white dark:hover:bg-neutral-200 dark:text-neutral-950 hover:shadow-red-500/20'
                 }`}
               >
                 {subscribed ? (
@@ -134,7 +134,7 @@ export default function ChannelPage() {
 
               <button
                 onClick={() => setShareOpen(true)}
-                className="px-4 py-2.5 rounded-full bg-neutral-800 hover:bg-neutral-700 text-neutral-200 text-xs sm:text-sm font-semibold transition border border-neutral-700 flex items-center gap-1.5"
+                className="px-4 py-2.5 rounded-full bg-white dark:bg-neutral-800 hover:bg-neutral-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-200 text-xs sm:text-sm font-semibold transition border border-neutral-200 dark:border-neutral-700 flex items-center gap-1.5 shadow-sm"
               >
                 <Share2 className="w-4 h-4" />
                 <span>Share</span>
@@ -144,15 +144,15 @@ export default function ChannelPage() {
         </div>
 
         {/* Channel Navigation Tabs */}
-        <div className="flex items-center gap-8 border-b border-neutral-800 text-sm font-bold mt-2">
+        <div className="flex items-center gap-8 border-b border-neutral-200 dark:border-neutral-800 text-sm font-bold mt-2">
           {['videos', 'shorts', 'about'].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`py-3.5 border-b-2 uppercase tracking-wider text-xs sm:text-sm transition-colors cursor-pointer ${
                 activeTab === tab
-                  ? 'border-red-600 text-white font-extrabold'
-                  : 'border-transparent text-neutral-400 hover:text-white'
+                  ? 'border-red-600 text-neutral-900 dark:text-white font-extrabold'
+                  : 'border-transparent text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white'
               }`}
             >
               {tab}
@@ -165,7 +165,7 @@ export default function ChannelPage() {
           {activeTab === 'videos' && (
             <div>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-base font-bold text-neutral-200">
+                <h3 className="text-base font-bold text-neutral-800 dark:text-neutral-200">
                   Uploaded Videos ({videos.length})
                 </h3>
               </div>
@@ -178,7 +178,7 @@ export default function ChannelPage() {
                 </div>
               ) : (
                 <div className="text-center py-16 text-neutral-400">
-                  <Video className="w-12 h-12 mx-auto mb-3 text-neutral-600" />
+                  <Video className="w-12 h-12 mx-auto mb-3 text-neutral-500" />
                   <p className="text-base font-semibold">No video uploads found</p>
                 </div>
               )}
@@ -187,7 +187,7 @@ export default function ChannelPage() {
 
           {activeTab === 'shorts' && (
             <div>
-              <h3 className="text-base font-bold text-neutral-200 mb-4">
+              <h3 className="text-base font-bold text-neutral-800 dark:text-neutral-200 mb-4">
                 Creator Shorts ({(shorts.length > 0 ? shorts : videos).length})
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -195,7 +195,7 @@ export default function ChannelPage() {
                   <div
                     key={v.id}
                     onClick={() => navigate(`/watch?v=${v.id}`)}
-                    className="aspect-[9/16] rounded-2xl overflow-hidden bg-neutral-900 border border-neutral-800 cursor-pointer group relative shadow hover:shadow-red-500/10 transition"
+                    className="aspect-[9/16] rounded-2xl overflow-hidden bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 cursor-pointer group relative shadow hover:shadow-red-500/10 transition"
                   >
                     <img
                       src={v.thumbnail}
@@ -205,7 +205,7 @@ export default function ChannelPage() {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent p-3 flex flex-col justify-end">
                       <p className="text-xs font-semibold text-white line-clamp-2">{v.title}</p>
-                      <span className="text-[11px] text-neutral-400 mt-1">{v.views || v.likes}</span>
+                      <span className="text-[11px] text-neutral-300 mt-1">{v.views || v.likes}</span>
                     </div>
                   </div>
                 ))}
@@ -214,17 +214,17 @@ export default function ChannelPage() {
           )}
 
           {activeTab === 'about' && (
-            <div className="max-w-3xl bg-neutral-900/60 p-6 rounded-3xl border border-neutral-800 space-y-4">
-              <h3 className="text-lg font-bold text-neutral-100 flex items-center gap-2">
+            <div className="max-w-3xl bg-white dark:bg-neutral-900/60 p-6 rounded-3xl border border-neutral-200 dark:border-neutral-800 space-y-4 shadow-sm">
+              <h3 className="text-lg font-bold text-neutral-900 dark:text-neutral-100 flex items-center gap-2">
                 <Info className="w-5 h-5 text-red-500" /> About {channelData.title}
               </h3>
-              <p className="text-sm text-neutral-300 leading-relaxed">
+              <p className="text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed">
                 {channelData.description}
               </p>
-              <div className="pt-4 border-t border-neutral-800 text-xs text-neutral-400 space-y-2">
-                <p>Channel Handle: <span className="text-white font-mono">{channelData.handle}</span></p>
-                <p>Subscribers: <span className="text-red-400 font-semibold">{channelData.subscribers}</span></p>
-                <p>Verified on PlayTube: <span className="text-emerald-400 font-semibold">Yes • Active Creator</span></p>
+              <div className="pt-4 border-t border-neutral-200 dark:border-neutral-800 text-xs text-neutral-500 dark:text-neutral-400 space-y-2">
+                <p>Channel Handle: <span className="text-neutral-900 dark:text-white font-mono">{channelData.handle}</span></p>
+                <p>Subscribers: <span className="text-red-500 dark:text-red-400 font-semibold">{channelData.subscribers}</span></p>
+                <p>Verified on PlayTube: <span className="text-emerald-500 dark:text-emerald-400 font-semibold">Yes • Active Creator</span></p>
               </div>
             </div>
           )}
