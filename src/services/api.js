@@ -491,63 +491,71 @@ export async function getChannelProfile(channelId, channelName) {
  * Delivers continuous list-by-list video streaming like real YouTube
  */
 export async function getHomeFeed(category = 'All', page = 1) {
-  let query = 'latest viral videos entertainment';
+  let query = 'Trending songs';
 
   if (category === 'Music') {
     const musicQueries = [
-      'new trending music videos 2026',
-      'latest bollywood songs new hindi hits',
-      'top billboard global hits 2026',
-      'arijit singh shreya ghoshal new song'
+      'Trending music',
+      'New popular songs',
+      'Bollywood hits',
+      'Arijit Singh songs'
     ];
     query = musicQueries[(page - 1) % musicQueries.length];
   } else if (category === 'Bollywood Hits') {
     const bollywoodQueries = [
-      'bollywood latest hits 2026',
-      'new hindi songs 2026',
-      'bollywood top chartbusters songs',
-      'latest hindi romantic songs 2026'
+      'Bollywood songs',
+      'New hindi songs 2026',
+      'Bollywood top chartbusters'
     ];
     query = bollywoodQueries[(page - 1) % bollywoodQueries.length];
   } else if (category === 'Gaming') {
     const gamingQueries = [
-      'top trending gaming videos 2026',
-      'GTA 6 gameplay walkthrough and trailers',
-      'Minecraft speedruns tournaments',
-      'Esports championship top moments'
+      'Trending gaming videos 2026',
+      'GTA 6 gameplay',
+      'Minecraft gameplay',
+      'Esports tournament'
     ];
     query = gamingQueries[(page - 1) % gamingQueries.length];
   } else if (category === 'Lo-fi') {
-    query = 'Lofi hip hop radio beats to relax study to';
+    query = 'Lofi hip hop beats to relax';
   } else if (category === 'Live') {
-    query = 'Live stream music news gaming now';
+    query = 'Live stream music news';
   } else if (category === 'Coding') {
-    const codingQueries = [
-      'React full stack web development tutorials 2026',
-      'Python AI and Machine Learning masterclass',
-      'Modern web apps coding freeCodeCamp'
-    ];
-    query = codingQueries[(page - 1) % codingQueries.length];
+    query = 'React web development tutorial 2026';
   } else if (category === 'Podcasts') {
-    query = 'Popular podcasts full episode interviews';
+    query = 'Popular podcast episode';
   } else if (category === 'News') {
-    query = 'latest breaking news headlines live today';
+    query = 'latest news headlines live';
   } else {
-    // 'All' - page rotation with fresh, diverse trending YouTube keywords
+    // 'All' - page rotation with verified high-yield YouTube search queries
     const allQueries = [
-      'latest viral videos entertainment',
-      'new trending music videos 2026',
-      'top trending videos today',
-      'popular new uploads global entertainment',
-      'trending news and viral clips'
+      'Trending songs',
+      'New popular songs',
+      'Top hits today',
+      'Bollywood hits',
+      'Top trending videos'
     ];
     query = allQueries[(page - 1) % allQueries.length];
   }
 
   try {
     const res = await searchVideos(query);
-    const videos = res.videos || res.filter(x => !x.isChannel);
-    const shorts = res.shorts && res.shorts.length > 0 ? res.shorts : [];
+    let videos = res.videos || res.filter(x => !x.isChannel);
+    let shorts = res.shorts && res.shorts.length > 0 ? res.shorts : [];
+
+    // If videos are fewer than 8, fetch complementary trending videos to ensure a rich full grid
+    if (videos.length < 8) {
+      const backupQuery = (category === 'All' || !category) ? 'New popular songs' : `${query} songs`;
+      const backupRes = await searchVideos(backupQuery);
+      if (backupRes.videos && backupRes.videos.length > 0) {
+        const existingIds = new Set(videos.map(v => v.id));
+        const newVids = backupRes.videos.filter(v => !existingIds.has(v.id));
+        videos = [...videos, ...newVids];
+      }
+      if (shorts.length < 4 && backupRes.shorts && backupRes.shorts.length > 0) {
+        shorts = [...shorts, ...backupRes.shorts];
+      }
+    }
 
     if (videos && videos.length > 0) {
       return { videos, shorts };

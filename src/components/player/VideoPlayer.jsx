@@ -497,7 +497,6 @@ export default function VideoPlayer({ videoId, title, isTheater, onToggleTheater
             id={`yt-player-${videoId}`}
             src={embedUrl}
             title={title || 'PlayTube Video Player'}
-            referrerPolicy="no-referrer"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             allowFullScreen
             onLoad={handleIframeLoad}

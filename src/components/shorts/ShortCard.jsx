@@ -50,9 +50,8 @@ export default function ShortCard({ short, isActive }) {
         <iframe
           src={embedUrl}
           title={short.title}
-          referrerPolicy="no-referrer"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          className="w-full h-full object-cover border-0 pointer-events-auto"
+          className="w-full h-[108%] -mt-[4%] object-cover border-0 pointer-events-auto"
         />
       </div>
 
