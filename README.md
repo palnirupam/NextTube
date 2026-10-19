@@ -9,12 +9,12 @@
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![Capacitor](https://img.shields.io/badge/Capacitor-Android-119EFF?logo=capacitor&logoColor=white)](https://capacitorjs.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![APK Download](https://img.shields.io/badge/Download-Android%20APK%20(4.55MB)-red?logo=android&logoColor=white)](https://github.com/palnirupam/NextTube/raw/main/PlayTube.apk)
+[![APK Download](https://img.shields.io/badge/Download-Android%20APK%20(4.20MB)-red?logo=android&logoColor=white)](https://github.com/palnirupam/NextTube/raw/main/PlayTube.apk)
 
 <br/>
 
 <a href="https://github.com/palnirupam/NextTube/raw/main/PlayTube.apk">
-  <img src="https://img.shields.io/badge/📥_DOWNLOAD_LATEST_APK-PlayTube.apk_(4.55MB)-E50914?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" />
+  <img src="https://img.shields.io/badge/📥_DOWNLOAD_LATEST_APK-PlayTube.apk_(4.20MB)-E50914?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" />
 </a>
 
 <p align="center">
@@ -32,12 +32,12 @@ You can download and install the ready-to-use Android APK directly on your phone
 <div align="center">
 
 <a href="https://github.com/palnirupam/NextTube/raw/main/PlayTube.apk">
-  <img src="https://img.shields.io/badge/📲_Download_Latest_APK-PlayTube.apk_(4.55MB)-E50914?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" />
+  <img src="https://img.shields.io/badge/📲_Download_Latest_APK-PlayTube.apk_(4.20MB)-E50914?style=for-the-badge&logo=android&logoColor=white" alt="Download APK" />
 </a>
 
 <br/><br/>
 
-👉 **[Direct Download: PlayTube.apk (4.55 MB)](https://github.com/palnirupam/NextTube/raw/main/PlayTube.apk)**
+👉 **[Direct Download: PlayTube.apk (4.20 MB)](https://github.com/palnirupam/NextTube/raw/main/PlayTube.apk)**
 
 </div>
 
