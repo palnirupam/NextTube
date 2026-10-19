@@ -1,0 +1,16 @@
+{
+  "short_name": "PlayTube",
+  "name": "PlayTube - Ad-Free Video Streaming",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0f0f0f",
+  "theme_color": "#0f0f0f",
+  "display": "standalone",
+  "orientation": "portrait-primary"
+}

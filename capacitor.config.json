@@ -1,0 +1,8 @@
+{
+  "appId": "com.playtube.streamer",
+  "appName": "PlayTube",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}
