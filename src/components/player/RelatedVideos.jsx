@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getRelatedVideos, CURATED_VIDEOS } from '../../services/api';
+import { getRelatedVideos } from '../../services/api';
 import { formatViews } from '../../utils/formatters';
 import { useApp } from '../../context/AppContext';
 
@@ -14,8 +14,8 @@ export default function RelatedVideos({
   onNextVideoDetermined
 }) {
   const [activeFilter, setActiveFilter] = useState('All');
-  const [allVideos, setAllVideos] = useState(CURATED_VIDEOS.filter(v => v.id !== currentVideoId));
-  const [loading, setLoading] = useState(false);
+  const [allVideos, setAllVideos] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { addToHistory } = useApp();
 
@@ -25,8 +25,8 @@ export default function RelatedVideos({
     setActiveFilter('All'); // Reset filter on video change
 
     getRelatedVideos(currentVideoId, videoTitle || channelName || currentCategory).then((items) => {
-      if (active && items && items.length > 0) {
-        const filtered = items.filter(v => v.id !== currentVideoId);
+      if (active) {
+        const filtered = (items || []).filter(v => v.id !== currentVideoId);
         setAllVideos(filtered);
         if (filtered[0]) {
           onNextVideoDetermined?.(filtered[0]);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useApp } from '../context/AppContext';
-import { getHomeFeed, CURATED_VIDEOS, CURATED_SHORTS } from '../services/api';
+import { getHomeFeed } from '../services/api';
 import CategoryChips from '../components/common/CategoryChips';
 import VideoCard from '../components/common/VideoCard';
 import { Film, ChevronRight, Sparkles, RefreshCw } from 'lucide-react';
@@ -8,8 +8,8 @@ import { useNavigate } from 'react-router-dom';
 
 export default function HomePage() {
   const { activeCategory, setActiveCategory } = useApp();
-  const [videos, setVideos] = useState(CURATED_VIDEOS);
-  const [shorts, setShorts] = useState(CURATED_SHORTS);
+  const [videos, setVideos] = useState([]);
+  const [shorts, setShorts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
@@ -26,7 +26,7 @@ export default function HomePage() {
 
     getHomeFeed(activeCategory, 1).then((res) => {
       if (active) {
-        setVideos(res.videos || CURATED_VIDEOS);
+        setVideos(res.videos || []);
         if (res.shorts && res.shorts.length > 0) {
           setShorts(res.shorts);
         }

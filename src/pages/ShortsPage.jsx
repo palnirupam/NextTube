@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronUp, ChevronDown, Compass } from 'lucide-react';
-import { getShortsFeed, CURATED_SHORTS } from '../services/api';
+import { getShortsFeed } from '../services/api';
 import ShortCard from '../components/shorts/ShortCard';
 
 export default function ShortsPage() {
-  const [shorts, setShorts] = useState(CURATED_SHORTS);
+  const [shorts, setShorts] = useState([]);
   const [activeIndex, setActiveIndex] = useState(0);
   const containerRef = useRef(null);
 

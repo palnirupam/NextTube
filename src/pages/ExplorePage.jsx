@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Flame, Music2, Gamepad2, Newspaper, Radio, Sparkles } from 'lucide-react';
-import { searchVideos, CURATED_VIDEOS } from '../services/api';
+import { searchVideos } from '../services/api';
 import VideoCard from '../components/common/VideoCard';
 
 export default function ExplorePage() {
@@ -22,17 +22,13 @@ export default function ExplorePage() {
     let active = true;
     setLoading(true);
 
-    if (currentCat === 'Trending') {
-      setVideos(CURATED_VIDEOS);
-      setLoading(false);
-    } else {
-      searchVideos(currentCat).then((data) => {
-        if (active) {
-          setVideos(data);
-          setLoading(false);
-        }
-      });
-    }
+    const query = currentCat === 'Trending' ? 'Trending viral videos worldwide' : currentCat;
+    searchVideos(query).then((data) => {
+      if (active) {
+        setVideos(data.videos || data || []);
+        setLoading(false);
+      }
+    });
 
     return () => {
       active = false;
