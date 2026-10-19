@@ -168,22 +168,31 @@ export default function VideoPlayer({
     }
 
     const handleScreenLockOrBlur = () => {
-      // If user did not explicitly press pause and screen locked or blurred, keep playing
+      window.__isScreenLocked = true;
       if (isPlayingRef.current && !userPausedRef.current) {
         playSilentAudio();
-        setTimeout(() => sendIframeCommand('playVideo'), 150);
-        setTimeout(() => sendIframeCommand('playVideo'), 500);
+        setTimeout(() => sendIframeCommand('playVideo'), 100);
+        setTimeout(() => sendIframeCommand('playVideo'), 350);
+        setTimeout(() => sendIframeCommand('playVideo'), 800);
       }
     };
 
+    const handleScreenUnlocked = () => {
+      window.__isScreenLocked = false;
+    };
+
     window.addEventListener('blur', handleScreenLockOrBlur);
+    window.addEventListener('playtube_screen_off', handleScreenLockOrBlur);
     window.addEventListener('playtube_background_lock', handleScreenLockOrBlur);
-    document.addEventListener('visibilitychange', handleScreenLockOrBlur);
+    window.addEventListener('playtube_screen_on', handleScreenUnlocked);
+    window.addEventListener('focus', handleScreenUnlocked);
 
     return () => {
       window.removeEventListener('blur', handleScreenLockOrBlur);
+      window.removeEventListener('playtube_screen_off', handleScreenLockOrBlur);
       window.removeEventListener('playtube_background_lock', handleScreenLockOrBlur);
-      document.removeEventListener('visibilitychange', handleScreenLockOrBlur);
+      window.removeEventListener('playtube_screen_on', handleScreenUnlocked);
+      window.removeEventListener('focus', handleScreenUnlocked);
       pauseSilentAudio();
       window.PlayTubeNative?.onVideoStopped?.();
     };
@@ -214,9 +223,10 @@ export default function VideoPlayer({
             window.PlayTubeNative?.onVideoStarted?.(title || 'PlayTube Stream', channel || 'PlayTube Background Player');
           } else if (state === 2) {
             // Auto-paused by OS screen lock or blur while user didn't request pause -> resume!
-            if (!userPausedRef.current && (document.hidden || !document.hasFocus())) {
+            if (window.__isScreenLocked || !document.hasFocus() || (!userPausedRef.current && window.__isScreenLocked)) {
               playSilentAudio();
               setTimeout(() => sendIframeCommand('playVideo'), 100);
+              setTimeout(() => sendIframeCommand('playVideo'), 350);
             }
           }
         }

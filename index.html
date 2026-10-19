@@ -12,6 +12,21 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
     <link rel="manifest" href="/manifest.json" />
     <title>PlayTube - Ad-Free Video & Music Streaming</title>
+    <script>
+      // Global Page Visibility Override - Prevents YouTube & HTML5 media from auto-pausing on screen lock
+      try {
+        Object.defineProperty(document, 'hidden', { get: () => false, configurable: true });
+        Object.defineProperty(document, 'visibilityState', { get: () => 'visible', configurable: true });
+        Object.defineProperty(document, 'webkitHidden', { get: () => false, configurable: true });
+        Object.defineProperty(document, 'webkitVisibilityState', { get: () => 'visible', configurable: true });
+        window.addEventListener('visibilitychange', (e) => {
+          if (document.hidden) e.stopImmediatePropagation();
+        }, true);
+        window.addEventListener('webkitvisibilitychange', (e) => {
+          if (document.webkitHidden) e.stopImmediatePropagation();
+        }, true);
+      } catch (e) {}
+    </script>
   </head>
   <body class="bg-[#0f0f0f] text-[#f1f1f1] antialiased select-none font-sans overflow-x-hidden min-h-screen">
     <div id="root"></div>

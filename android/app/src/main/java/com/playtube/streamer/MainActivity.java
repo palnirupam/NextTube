@@ -1,7 +1,9 @@
 package com.playtube.streamer;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.media.AudioAttributes;
 import android.media.AudioFocusRequest;
@@ -26,6 +28,8 @@ import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.BridgeWebChromeClient;
 
 public class MainActivity extends BridgeActivity {
+    private static MainActivity instance;
+
     private View customView;
     private WebChromeClient.CustomViewCallback customViewCallback;
     private FrameLayout fullscreenContainer;
@@ -36,9 +40,40 @@ public class MainActivity extends BridgeActivity {
     private boolean isPlaying = false;
     private final Handler handler = new Handler(Looper.getMainLooper());
 
+    private final BroadcastReceiver screenReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (intent != null && Intent.ACTION_SCREEN_OFF.equals(intent.getAction())) {
+                keepAudioPlaying();
+            }
+        }
+    };
+
+    public static void sendPlayerCommand(String command) {
+        if (instance != null) {
+            instance.runOnUiThread(() -> {
+                try {
+                    WebView webView = instance.getBridge().getWebView();
+                    if (webView != null) {
+                        webView.evaluateJavascript(
+                            "(function() {" +
+                            "  var iframes = document.querySelectorAll('iframe');" +
+                            "  iframes.forEach(function(f) {" +
+                            "    try { f.contentWindow.postMessage('{\"event\":\"command\",\"func\":\"" + command + "\",\"args\":\"\"}', '*'); } catch(e){}" +
+                            "  });" +
+                            "})();",
+                            null
+                        );
+                    }
+                } catch (Exception ignored) {}
+            });
+        }
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        instance = this;
 
         // Initialize WakeLock to prevent CPU sleep when screen is locked
         try {
@@ -48,6 +83,16 @@ public class MainActivity extends BridgeActivity {
             }
             audioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
             requestAudioFocus();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        // Register Screen Off listener to immediately secure audio playback upon lock
+        try {
+            IntentFilter filter = new IntentFilter();
+            filter.addAction(Intent.ACTION_SCREEN_OFF);
+            filter.addAction(Intent.ACTION_SCREEN_ON);
+            registerReceiver(screenReceiver, filter);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -173,7 +218,7 @@ public class MainActivity extends BridgeActivity {
 
         @JavascriptInterface
         public void onVideoPaused() {
-            // Keep service ready or active
+            // Keep service standing by
         }
 
         @JavascriptInterface
@@ -259,16 +304,17 @@ public class MainActivity extends BridgeActivity {
             if (webView != null) {
                 webView.onResume();
                 webView.resumeTimers();
+                webView.evaluateJavascript("window.__isScreenLocked = false; window.dispatchEvent(new Event('playtube_screen_on'));", null);
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private void keepAudioPlaying() {
+    public void keepAudioPlaying() {
         try {
             if (wakeLock != null && !wakeLock.isHeld()) {
-                wakeLock.acquire(45 * 60 * 1000L); // Keep CPU awake for 45 mins
+                wakeLock.acquire(120 * 60 * 1000L); // Keep CPU awake for 2 hours
             }
             if (isPlaying) {
                 startPlaybackService();
@@ -281,33 +327,24 @@ public class MainActivity extends BridgeActivity {
                 webView.resumeTimers();
 
                 // Force YouTube iframe to resume playing when the screen is locked
-                handler.postDelayed(() -> {
-                    try {
-                        webView.evaluateJavascript(
-                            "(function() {" +
-                            "  var iframes = document.querySelectorAll('iframe');" +
-                            "  iframes.forEach(function(f) {" +
-                            "    try { f.contentWindow.postMessage('{\"event\":\"command\",\"func\":\"playVideo\",\"args\":\"\"}', '*'); } catch(e){}" +
-                            "  });" +
-                            "})();",
-                            null
-                        );
-                    } catch (Exception ignored) {}
-                }, 200);
+                String resumeScript =
+                    "(function() {" +
+                    "  window.__isScreenLocked = true;" +
+                    "  window.dispatchEvent(new Event('playtube_screen_off'));" +
+                    "  try {" +
+                    "    Object.defineProperty(document, 'hidden', { value: false, writable: true, configurable: true });" +
+                    "    Object.defineProperty(document, 'visibilityState', { value: 'visible', writable: true, configurable: true });" +
+                    "  } catch(e) {}" +
+                    "  var iframes = document.querySelectorAll('iframe');" +
+                    "  iframes.forEach(function(f) {" +
+                    "    try { f.contentWindow.postMessage('{\"event\":\"command\",\"func\":\"playVideo\",\"args\":\"\"}', '*'); } catch(e){}" +
+                    "  });" +
+                    "})();";
 
-                handler.postDelayed(() -> {
-                    try {
-                        webView.evaluateJavascript(
-                            "(function() {" +
-                            "  var iframes = document.querySelectorAll('iframe');" +
-                            "  iframes.forEach(function(f) {" +
-                            "    try { f.contentWindow.postMessage('{\"event\":\"command\",\"func\":\"playVideo\",\"args\":\"\"}', '*'); } catch(e){}" +
-                            "  });" +
-                            "})();",
-                            null
-                        );
-                    } catch (Exception ignored) {}
-                }, 600);
+                webView.evaluateJavascript(resumeScript, null);
+                handler.postDelayed(() -> { try { webView.evaluateJavascript(resumeScript, null); } catch (Exception ignored) {} }, 150);
+                handler.postDelayed(() -> { try { webView.evaluateJavascript(resumeScript, null); } catch (Exception ignored) {} }, 450);
+                handler.postDelayed(() -> { try { webView.evaluateJavascript(resumeScript, null); } catch (Exception ignored) {} }, 1000);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -316,6 +353,9 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onDestroy() {
+        try {
+            unregisterReceiver(screenReceiver);
+        } catch (Exception ignored) {}
         try {
             if (wakeLock != null && wakeLock.isHeld()) {
                 wakeLock.release();
