@@ -7,7 +7,8 @@ import {
   Download,
   Ban,
   CheckCircle2,
-  Play
+  Play,
+  Sparkles
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
@@ -40,39 +41,39 @@ export default function VideoCard({ video }) {
   const isLive = video.duration === 'LIVE' || video.views?.toString().includes('watching');
 
   return (
-    <div className="flex flex-col group cursor-pointer relative select-none">
-      {/* Thumbnail Container */}
+    <div className="flex flex-col group cursor-pointer relative select-none rounded-2xl p-1.5 transition-all duration-300 ease-out hover:-translate-y-1.5 hover:bg-neutral-850/60 hover:shadow-2xl hover:shadow-red-950/20 hover:ring-1 hover:ring-neutral-700/50">
+      {/* Thumbnail Container with Ambient Hover Glow */}
       <div
         onClick={handleCardClick}
-        className="relative aspect-video w-full rounded-2xl overflow-hidden bg-neutral-900 group-hover:rounded-none sm:group-hover:rounded-2xl transition-all duration-300 shadow-md"
+        className="relative aspect-video w-full rounded-2xl overflow-hidden bg-neutral-900 transition-all duration-300 shadow-md group-hover:shadow-red-600/10"
       >
         <img
           src={video.thumbnail}
           alt={video.title}
           loading="lazy"
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
           onError={(e) => {
-            // Fallback to high quality YouTube thumbnail if remote image fails
             e.target.src = `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`;
           }}
         />
 
-        {/* Hover Dark Overlay with Play Icon */}
-        <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-          <div className="w-12 h-12 rounded-full bg-red-600/90 text-white flex items-center justify-center shadow-lg transform scale-75 group-hover:scale-100 transition-transform">
+        {/* Ambient Cinema Light Glow Overlay on Hover */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+          {/* Animated Glowing Play Badge */}
+          <div className="w-12 h-12 rounded-full bg-red-600 text-white flex items-center justify-center shadow-lg shadow-red-600/50 transform scale-75 group-hover:scale-100 transition-all duration-300 ease-out ring-4 ring-white/20">
             <Play className="w-5 h-5 ml-0.5 fill-white" />
           </div>
         </div>
 
-        {/* Duration / LIVE Badge */}
+        {/* Duration / LIVE Frosted Glass Badge */}
         <div className="absolute bottom-2 right-2">
           {isLive ? (
-            <span className="px-1.5 py-0.5 rounded bg-red-600 text-white text-[11px] font-bold tracking-wider uppercase flex items-center gap-1 shadow">
+            <span className="px-2 py-0.5 rounded-md bg-red-600 text-white text-[11px] font-bold tracking-wider uppercase flex items-center gap-1.5 shadow-lg shadow-red-600/40">
               <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
               LIVE
             </span>
           ) : (
-            <span className="px-1.5 py-0.5 rounded bg-black/80 text-white text-xs font-semibold tracking-tight shadow">
+            <span className="px-2 py-0.5 rounded-md bg-black/80 backdrop-blur-md text-white text-[11px] font-semibold tracking-tight shadow border border-white/10">
               {video.duration || '3:45'}
             </span>
           )}
@@ -81,7 +82,7 @@ export default function VideoCard({ video }) {
 
       {/* Video Info Meta Row */}
       <div className="flex gap-3 mt-3 px-1 items-start">
-        {/* Channel Avatar */}
+        {/* Channel Avatar with Glow Ring */}
         <div
           onClick={(e) => {
             e.stopPropagation();
@@ -89,18 +90,20 @@ export default function VideoCard({ video }) {
           }}
           className="shrink-0 pt-0.5"
         >
-          <img
-            src={video.channelAvatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${video.channel}`}
-            alt={video.channel}
-            className="w-9 h-9 rounded-full object-cover ring-1 ring-neutral-700/60 hover:ring-red-500 transition"
-          />
+          <div className="relative group/avatar">
+            <img
+              src={video.channelAvatar || `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(video.channel)}`}
+              alt={video.channel}
+              className="w-9 h-9 rounded-full object-cover ring-1 ring-neutral-700/80 group-hover:ring-2 group-hover:ring-red-500 transition-all duration-300 shadow"
+            />
+          </div>
         </div>
 
         {/* Title, Channel & Stats */}
         <div onClick={handleCardClick} className="flex-1 min-w-0 pr-1">
           <h3
             title={video.title}
-            className="text-sm font-semibold text-neutral-100 line-clamp-2 leading-snug group-hover:text-neutral-200"
+            className="text-sm font-semibold text-neutral-100 line-clamp-2 leading-snug group-hover:text-red-400 transition-colors duration-200"
           >
             {video.title}
           </h3>
@@ -111,7 +114,7 @@ export default function VideoCard({ video }) {
                 e.stopPropagation();
                 navigate(`/search?q=${encodeURIComponent(video.channel)}`);
               }}
-              className="hover:text-neutral-200 transition font-medium flex items-center gap-1"
+              className="hover:text-neutral-100 transition font-medium flex items-center gap-1"
             >
               {video.channel}
               <CheckCircle2 className="w-3.5 h-3.5 text-neutral-400 fill-neutral-400 text-[#0f0f0f]" />
@@ -119,9 +122,9 @@ export default function VideoCard({ video }) {
 
             <div className="flex items-center gap-1 text-neutral-400">
               <span className="hidden sm:inline">•</span>
-              <span>{formatViews(video.views)}</span>
+              <span>{video.views}</span>
               <span>•</span>
-              <span>{video.timestamp || '1 year ago'}</span>
+              <span>{video.timestamp || 'Recently'}</span>
             </div>
           </div>
         </div>
@@ -142,7 +145,7 @@ export default function VideoCard({ video }) {
           {menuOpen && (
             <div
               onClick={(e) => e.stopPropagation()}
-              className="absolute right-0 top-8 w-52 bg-[#282828] text-white rounded-xl shadow-2xl border border-neutral-700 py-1.5 z-40 text-xs animate-in fade-in zoom-in-95 duration-100"
+              className="absolute right-0 top-8 w-52 bg-[#282828] text-white rounded-2xl shadow-2xl border border-neutral-700 py-1.5 z-40 text-xs animate-in fade-in zoom-in-95 duration-100 backdrop-blur-md"
             >
               <button
                 onClick={() => {
