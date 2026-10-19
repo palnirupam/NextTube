@@ -1,45 +1,33 @@
-import React, { useState } from 'react';
-import { ThumbsUp, ThumbsDown, MessageSquare, ArrowUpDown, Trash2, Heart } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ThumbsUp, ThumbsDown, MessageSquare, ArrowUpDown, Trash2, Heart, MessageCircle } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { getVideoComments } from '../../services/api';
 
 export default function CommentsSection({ videoId }) {
   const { showToast } = useApp();
-  const [comments, setComments] = useState([
-    {
-      id: 1,
-      author: 'MelodyAesthetic',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop',
-      time: '2 days ago',
-      text: 'This melody touches the deepest corner of the heart every single time! Truly timeless masterpiece.',
-      likes: 1420,
-      isLiked: false,
-      isDisliked: false,
-    },
-    {
-      id: 2,
-      author: 'AcousticVibes99',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop',
-      time: '4 days ago',
-      text: 'The vocals in this track are unmatched. Especially at the bridge, pure goosebumps!',
-      likes: 852,
-      isLiked: false,
-      isDisliked: false,
-    },
-    {
-      id: 3,
-      author: 'CodeAndChill',
-      avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=100&h=100&fit=crop',
-      time: '1 week ago',
-      text: 'Having this on loop while working on late night coding projects. 10/10 vibe!',
-      likes: 310,
-      isLiked: false,
-      isDisliked: false,
-    }
-  ]);
-
+  const [comments, setComments] = useState([]);
+  const [totalCount, setTotalCount] = useState('Comments');
+  const [loading, setLoading] = useState(true);
   const [newComment, setNewComment] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [sortBy, setSortBy] = useState('top');
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+
+    getVideoComments(videoId).then((res) => {
+      if (active) {
+        setComments(res.comments || []);
+        setTotalCount(res.totalCount || 'Comments');
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      active = false;
+    };
+  }, [videoId]);
 
   const handlePostComment = (e) => {
     e.preventDefault();
@@ -100,12 +88,12 @@ export default function CommentsSection({ videoId }) {
     <div className="mt-6 pt-6 border-t border-neutral-800">
       {/* Header & Sorting */}
       <div className="flex items-center gap-6 mb-6">
-        <h3 className="text-xl font-bold text-neutral-100">
-          {comments.length + 1420} Comments
+        <h3 className="text-lg sm:text-xl font-bold text-neutral-100">
+          {totalCount}
         </h3>
         <button
           onClick={() => setSortBy(sortBy === 'top' ? 'newest' : 'top')}
-          className="flex items-center gap-2 text-sm font-semibold text-neutral-300 hover:text-white transition"
+          className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-neutral-300 hover:text-white transition"
         >
           <ArrowUpDown className="w-4 h-4" />
           <span>Sort by: {sortBy === 'top' ? 'Top comments' : 'Newest first'}</span>
@@ -151,70 +139,94 @@ export default function CommentsSection({ videoId }) {
       </form>
 
       {/* Comments List */}
-      <div className="space-y-6">
-        {comments.map((comment) => (
-          <div key={comment.id} className="flex gap-4 group">
-            <img
-              src={comment.avatar}
-              alt={comment.author}
-              className="w-10 h-10 rounded-full object-cover shrink-0 ring-1 ring-neutral-700"
-            />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-neutral-200">
-                  {comment.author}
-                </span>
-                <span className="text-[11px] text-neutral-400">
-                  {comment.time}
-                </span>
-              </div>
+      {loading ? (
+        <div className="flex items-center justify-center py-10 gap-3 text-neutral-400 text-sm">
+          <div className="w-6 h-6 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+          <span>Loading official YouTube comments...</span>
+        </div>
+      ) : comments.length === 0 ? (
+        <div className="py-8 text-center text-neutral-500 text-sm">
+          No comments yet. Be the first to start the conversation!
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {comments.map((comment) => (
+            <div key={comment.id} className="flex gap-3 sm:gap-4 group">
+              <img
+                src={comment.avatar}
+                alt={comment.author}
+                onError={(e) => {
+                  e.target.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop';
+                }}
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover shrink-0 ring-1 ring-neutral-700"
+              />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-neutral-200 hover:text-red-400 transition cursor-pointer">
+                    {comment.author}
+                  </span>
+                  <span className="text-[11px] text-neutral-400">
+                    {comment.time}
+                  </span>
+                </div>
 
-              <p className="text-sm text-neutral-300 mt-1 leading-relaxed break-words">
-                {comment.text}
-              </p>
+                <p className="text-xs sm:text-sm text-neutral-300 mt-1 leading-relaxed break-words whitespace-pre-wrap">
+                  {comment.text}
+                </p>
 
-              {/* Comment Actions */}
-              <div className="flex items-center gap-4 mt-2">
-                <button
-                  onClick={() => handleLike(comment.id)}
-                  className={`flex items-center gap-1.5 text-xs transition ${
-                    comment.isLiked ? 'text-blue-500 font-bold' : 'text-neutral-400 hover:text-white'
-                  }`}
-                >
-                  <ThumbsUp className="w-3.5 h-3.5" />
-                  <span>{comment.likes}</span>
-                </button>
-
-                <button
-                  onClick={() => handleDislike(comment.id)}
-                  className={`p-1 text-xs transition ${
-                    comment.isDisliked ? 'text-red-500 font-bold' : 'text-neutral-400 hover:text-white'
-                  }`}
-                >
-                  <ThumbsDown className="w-3.5 h-3.5" />
-                </button>
-
-                <button
-                  onClick={() => showToast('Reply thread feature ready')}
-                  className="text-xs text-neutral-400 hover:text-white font-medium"
-                >
-                  Reply
-                </button>
-
-                {comment.isUserComment && (
+                {/* Comment Actions */}
+                <div className="flex items-center gap-4 mt-2">
                   <button
-                    onClick={() => handleDelete(comment.id)}
-                    className="text-xs text-neutral-500 hover:text-red-400 p-1 opacity-0 group-hover:opacity-100 transition"
-                    title="Delete your comment"
+                    onClick={() => handleLike(comment.id)}
+                    className={`flex items-center gap-1.5 text-xs transition ${
+                      comment.isLiked ? 'text-blue-500 font-bold' : 'text-neutral-400 hover:text-white'
+                    }`}
                   >
-                    <Trash2 className="w-3.5 h-3.5" />
+                    <ThumbsUp className="w-3.5 h-3.5" />
+                    <span>{comment.likes}</span>
                   </button>
-                )}
+
+                  <button
+                    onClick={() => handleDislike(comment.id)}
+                    className={`p-1 text-xs transition ${
+                      comment.isDisliked ? 'text-red-500 font-bold' : 'text-neutral-400 hover:text-white'
+                    }`}
+                  >
+                    <ThumbsDown className="w-3.5 h-3.5" />
+                  </button>
+
+                  <button
+                    onClick={() => showToast('Reply thread feature ready')}
+                    className="text-xs text-neutral-400 hover:text-white font-medium"
+                  >
+                    Reply
+                  </button>
+
+                  {comment.replyCount && comment.replyCount !== '0' && (
+                    <button
+                      onClick={() => showToast(`Viewing ${comment.replyCount} replies`)}
+                      className="text-xs text-blue-400 hover:text-blue-300 font-semibold flex items-center gap-1 ml-2"
+                    >
+                      <MessageCircle className="w-3 h-3" />
+                      <span>{comment.replyCount} replies</span>
+                    </button>
+                  )}
+
+                  {comment.isUserComment && (
+                    <button
+                      onClick={() => handleDelete(comment.id)}
+                      className="text-xs text-neutral-500 hover:text-red-400 p-1 opacity-0 group-hover:opacity-100 transition"
+                      title="Delete your comment"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

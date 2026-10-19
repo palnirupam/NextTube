@@ -994,3 +994,114 @@ export async function getRelatedVideos(videoId, fallbackQuery = '') {
 
   return CURATED_VIDEOS.filter(v => v.id !== videoId);
 }
+
+/**
+ * Deep REA Real YouTube Comments from InnerTube
+ * Fetches real comments, profile pics, likes, and reply counts directly from YouTube
+ */
+export async function getVideoComments(videoId) {
+  if (!videoId) return { totalCount: 'Comments', comments: [] };
+
+  try {
+    const payload = {
+      context: { client: { clientName: 'WEB', clientVersion: '2.20240101.01.00', hl: 'en', gl: 'US' } },
+      videoId: videoId
+    };
+
+    const nextData = await postYouTubeAPI('/youtubei/v1/next', payload);
+    const contents = nextData.contents?.twoColumnWatchNextResults?.results?.results?.contents || [];
+
+    // Find comment-item-section continuation token
+    let token = null;
+    for (const c of contents) {
+      if (c.itemSectionRenderer?.sectionIdentifier === 'comment-item-section') {
+        const items = c.itemSectionRenderer.contents || [];
+        const cont = items.find(i => i.continuationItemRenderer)?.continuationItemRenderer;
+        token = cont?.continuationEndpoint?.continuationCommand?.token;
+        if (token) break;
+      }
+    }
+
+    if (!token) {
+      for (const c of contents) {
+        const cont = c.itemSectionRenderer?.contents?.find(i => i.continuationItemRenderer)?.continuationItemRenderer;
+        if (cont?.continuationEndpoint?.continuationCommand?.token) {
+          token = cont.continuationEndpoint.continuationCommand.token;
+          break;
+        }
+      }
+    }
+
+    if (!token) {
+      return { totalCount: 'Comments', comments: [] };
+    }
+
+    const commentRes = await postYouTubeAPI('/youtubei/v1/next', {
+      context: { client: { clientName: 'WEB', clientVersion: '2.20240101.01.00', hl: 'en', gl: 'US' } },
+      continuation: token
+    });
+
+    let totalCount = 'Comments';
+    const endpoints = commentRes.onResponseReceivedEndpoints || [];
+
+    // 1. Header Count
+    const ep0Items = endpoints[0]?.reloadContinuationItemsCommand?.continuationItems || [];
+    const header = ep0Items.find(i => i.commentsHeaderRenderer)?.commentsHeaderRenderer;
+    if (header) {
+      totalCount = header.countText?.runs?.map(r => r.text).join('') ||
+                   header.commentsCount?.runs?.map(r => r.text).join('') ||
+                   'Comments';
+    }
+
+    // 2. Parse comments from modern InnerTube mutations
+    const mutations = commentRes.frameworkUpdates?.entityBatchUpdate?.mutations || [];
+    const commentEntities = mutations.map(m => m.payload?.commentEntityPayload).filter(Boolean);
+
+    const comments = [];
+    for (const ce of commentEntities) {
+      const text = ce.properties?.content?.content || '';
+      if (!text) continue;
+
+      comments.push({
+        id: ce.properties?.commentId || Math.random().toString(),
+        author: ce.author?.displayName || 'YouTube User',
+        avatar: cleanMediaUrl(ce.author?.avatarThumbnailUrl) || `https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop`,
+        time: ce.properties?.publishedTime || 'Recently',
+        text: text,
+        likes: ce.toolbar?.likeCountNotliked || '0',
+        replyCount: ce.toolbar?.replyCount || '0',
+        isLiked: false,
+        isDisliked: false
+      });
+    }
+
+    // 3. Fallback: Classic commentThreadRenderer format
+    if (comments.length === 0) {
+      const ep1Items = endpoints[1]?.reloadContinuationItemsCommand?.continuationItems || [];
+      for (const item of ep1Items) {
+        const ctr = item.commentThreadRenderer?.comment?.commentRenderer;
+        if (ctr) {
+          comments.push({
+            id: ctr.commentId,
+            author: ctr.authorText?.simpleText || 'YouTube User',
+            avatar: cleanMediaUrl(ctr.authorThumbnail?.thumbnails?.[0]?.url) || `https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop`,
+            time: ctr.publishedTimeText?.runs?.[0]?.text || 'Recently',
+            text: ctr.contentText?.runs?.map(r => r.text).join('') || '',
+            likes: ctr.voteCount?.simpleText || '0',
+            replyCount: ctr.replyCount || '0',
+            isLiked: false,
+            isDisliked: false
+          });
+        }
+      }
+    }
+
+    return {
+      totalCount,
+      comments
+    };
+  } catch (err) {
+    console.warn('Real YouTube comments fetch notice:', err);
+    return { totalCount: 'Comments', comments: [] };
+  }
+}
